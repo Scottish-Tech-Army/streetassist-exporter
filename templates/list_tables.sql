@@ -1,0 +1,39 @@
+SELECT
+    TABLE_SCHEMA,
+    TABLE_NAME
+FROM
+    INFORMATION_SCHEMA.TABLES
+WHERE
+    TABLE_TYPE = 'BASE TABLE'
+ORDER BY
+    TABLE_SCHEMA, TABLE_NAME;
+
+SELECT
+    COLUMN_NAME,
+    DATA_TYPE,
+    CHARACTER_MAXIMUM_LENGTH,
+    IS_NULLABLE,
+    ORDINAL_POSITION
+FROM
+    INFORMATION_SCHEMA.COLUMNS
+WHERE
+    TABLE_NAME = 'inspections'
+    -- Optionally, if your table is not in the default schema, add:
+    -- AND TABLE_SCHEMA = 'YourSchema'
+ORDER BY
+    ORDINAL_POSITION;
+
+SELECT
+    COLUMN_NAME,
+    DATA_TYPE,
+    CHARACTER_MAXIMUM_LENGTH,
+    IS_NULLABLE,
+    ORDINAL_POSITION
+FROM
+    INFORMATION_SCHEMA.COLUMNS
+WHERE
+    TABLE_NAME = 'inspection_items'
+    -- Optionally, if your table is not in the default schema, add:
+    -- AND TABLE_SCHEMA = 'YourSchema'
+ORDER BY
+    ORDINAL_POSITION;
