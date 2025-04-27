@@ -61,11 +61,17 @@ logger.info("Get started")
 api_token = os.environ["API_TOKEN"]  # Raises KeyError if not set
 connection_string = os.environ["CONNECTION"]  # Raises KeyError if not set
 last_run_raw = os.environ["LASTRUN"]  # Raises KeyError if not set
-# LASTRUN is date, space year - which cannot be parsed by the exporter. Just bin the timestamp
-# as this is for efficiency only.
-last_run = last_run_raw.split(" ")[0]
-
-logger.info("Last run time (raw and reduced): \"%s\" and \"%s\"", last_run_raw, last_run_raw)
+# LASTRUN is something like "2025-01-01 12:34:56" - which cannot be parsed by the exporter.
+# Convert to the correct format.
+logger.info("Last run time (raw): \"%s\"", last_run_raw)
+parts = last_run_raw.split(" ")
+if len(parts) == 2:
+    date, time = parts
+else:
+    raise ValueError("Expected exactly one space in last_run_raw")
+date, time = last_run_raw.split(" ")
+last_run = f"{date}T{time}Z"
+logger.info("Last run time (reformatted): \"%s\"", last_run)
 
 set_config(api_token, connection_string, last_run)
 export_data()

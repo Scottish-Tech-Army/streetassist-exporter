@@ -9,5 +9,5 @@ cd "$(dirname "$0")/.."
 docker build docker/ -t exporter
 
 # Run the container.
-docker run -e API_TOKEN -e CONNECTION -e SERVER -e DB -e ADMINUSER -e ADMINPWD -a stdin -a stdout -it exporter
+docker run -e API_TOKEN -e SERVER -e DB -e ADMINUSER -e ADMINPWD -a stdin -a stdout -it exporter
 

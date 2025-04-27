@@ -10,6 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
   && rm -rf /var/lib/apt/lists/*
 
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+
 # Add the Microsoft repository keys and sources for mssql-tools.
 RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
   && curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list
@@ -31,4 +33,3 @@ WORKDIR /app
 
 # Set the entrypoint to a bash script or the Python interpreter.
 ENTRYPOINT ["bash", "entry_point.sh"]
-#CMD ["python3", "--version"]

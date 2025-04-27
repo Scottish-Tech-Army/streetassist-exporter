@@ -2,15 +2,39 @@
 # Set up initial deployment.
 set -euo pipefail
 
+echo "SERVER: ${SERVER}"
+echo "DB: ${DB}"
+echo "ADMINUSER: ${ADMINUSER}"
+echo "SERVER: ${SERVER}"
+
+# This function will be triggered whenever a command exits with a non-zero status.
+error_handler() {
+    local exit_code="$?"
+    echo "Error occurred at line ${BASH_LINENO[0]}: command '${BASH_COMMAND}' exited with code ${exit_code}" >&2
+    # Wait a moment to ensure all logs flush
+    sleep 1
+    exit "${exit_code}"
+}
+
+# Trap any error
+trap error_handler ERR
+
+echo "Entry point running"
+
 if [[ -z "${API_TOKEN:-}" ]]; then
-    echo "Error: Environment variable API_TOKEN is not set." >&2
-    exit 1
+    echo "Environment variable API_TOKEN not set - read from key vault ${KEYVAULTNAME} using ID ${UAMI_CLIENT_ID}"
+    # For the mad workaround, there is this reference: https://github.com/Azure/azure-cli/issues/22677
+    export APPSETTING_WEBSITE_SITE_NAME=DUMMY
+    az login --identity --client-id ${UAMI_CLIENT_ID}
+
+    # Fetch the secret value; replace <YourKeyVaultName> with the actual Key Vault name.
+    echo "Get the access token"
+    export API_TOKEN=$(az keyvault secret show --vault-name ${KEYVAULTNAME} --name accessToken --query value -o tsv)
+    echo "Get the SQL server admin password"
+    export ADMINPWD=$(az keyvault secret show --vault-name ${KEYVAULTNAME} --name sqlAdminPassword --query value -o tsv)
 fi
 
-if [[ -z "${CONNECTION:-}" ]]; then
-    echo "Error: Environment variable CONNECTION is not set." >&2
-    exit 1
-fi
+export CONNECTION="sqlserver://${ADMINUSER}:${ADMINPWD}@${SERVER}:1433?database=${DB}"
 
 # Read the timestamp when last run; the -h -1 suppresses headers, and the create is in case the table does not exist.
 echo "Checking previous run times"
