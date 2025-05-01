@@ -1,37 +1,26 @@
 # Street Assist download tooling
 
-This project provides tooling to allow download of Safety Culture data and its display using Power BI dashboards.
-
-*More about what this actually does / is for*
-
-## Implementation overview
-
-The implementation consists of the following pieces.
-
-- In Azure, there is data storage as follows.
-
-    - An Azure SQL instance to store the data.
-
-    - Something TBD (Azure container instance most likely, with a container registry) to run the downloads.
-
-    - An Azure Key Vault to store credentials.
-
-- In the Power BI service there are Power BI reports and dashboards that allow display and viewing of data.
+This project provides tooling to allow download of Safety Culture data and its display using Power BI dashboards, to allow Street Assist to view up to date data in their Power BI dashboards.
 
 ## Directory structure
 
 The contents of this repository are organised as follows.
 
-- [scripts](scripts) stores scripts
+- [docs](docs) contains documentation.
 
-- [templates](templates) contains Azure templates (ARM or BICEP)
+- [config](config) contains config files, largely with names of resources in particular deployments. (There is one live deployment, and potentially one or more test deployments during development.)
 
-- [src](src) contains code
+- [scripts](scripts) stores scripts used for deployment purposes.
 
-- [docs](docs) contains documentation
+- [templates](templates) contains Azure templates (BICEP).
 
-- [powerbi](powerbi) contains Power BI files.
+- [docker](docker) contains the Azure Container App Job code, including scripts that are run during its nightly runs, the Safety Culture CLI exporter, and SQL table and view definitions.
 
-## Detailed instructions
+## Documentation
 
-*To be provided*
+- To understand the design, read the [architecture document](docs/architecture.md).
+
+- To deploy a new instance of the tooling, read the [deployment documentation](docs/deploy.md).
+
+- For detailed information about database tables, read the [data design](docs/data.md). **This data documentation is a work in progress.**
+
