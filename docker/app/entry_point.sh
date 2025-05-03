@@ -54,6 +54,58 @@ SQLCMD=$(cat write_lasttime.sql | sed "s/THISRUN/${THISRUN}/g")
 echo "    SQL command: \"${SQLCMD}\""
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
 
+# Index everything; very slow when first run
+echo "Create indices"
+for i in "template_id" "item_id" "audit_id" "type"
+do
+    echo "  ${i} in inspection_items"
+    SQLCMD="IF NOT EXISTS (
+        SELECT 1
+        FROM sys.indexes
+        WHERE name = 'IX_InspectionItems_${i}' AND object_id = OBJECT_ID('dbo.inspection_items')
+    )
+    BEGIN
+        CREATE INDEX IX_InspectionItems_${i}
+        ON dbo.inspection_items (${i});
+    END;"
+
+    sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
+done
+
+# Would like to index "template_name", but it is arbitrary length, so SQL says no.
+for i in "date_started" "template_id" "audit_id"
+do
+    echo "  ${i} in inspections"
+    SQLCMD="IF NOT EXISTS (
+        SELECT 1
+        FROM sys.indexes
+        WHERE name = 'IX_Inspections_${i}' AND object_id = OBJECT_ID('dbo.inspections')
+    )
+    BEGIN
+        CREATE INDEX IX_Inspections_${i}
+        ON dbo.inspections (${i});
+    END;"
+
+    sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
+done
+
+# Would like to index "name", but it is arbitrary length, so SQL says no.
+for i in "template_id"
+do
+    echo "  ${i} in templates"
+    SQLCMD="IF NOT EXISTS (
+        SELECT 1
+        FROM sys.indexes
+        WHERE name = 'IX_Templates_${i}' AND object_id = OBJECT_ID('dbo.templates')
+    )
+    BEGIN
+        CREATE INDEX IX_Templates_${i}
+        ON dbo.templates (${i});
+    END;"
+
+    sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
+done
+
 # Create the views.
 echo "Create views"
 echo "    Main views"

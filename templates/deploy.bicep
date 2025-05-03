@@ -193,7 +193,7 @@ resource containerAppJob 'Microsoft.App/jobs@2024-03-01' = {
           identity: uami.id
         }
       ]
-      replicaTimeout: 3600
+      replicaTimeout: 28800
       triggerType: 'Schedule'
       scheduleTriggerConfig: {
         cronExpression: scheduleCron
@@ -207,6 +207,10 @@ resource containerAppJob 'Microsoft.App/jobs@2024-03-01' = {
         {
           name: containerAppJobName
           image: containerImage
+          resources: {
+            cpu: 1
+            memory: '2Gi'
+          }
           env: [
             {
               name: 'UAMI_RESOURCE_ID'

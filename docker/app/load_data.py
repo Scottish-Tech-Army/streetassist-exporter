@@ -35,7 +35,7 @@ def set_config(api_token, connection_string, last_run):
     config['access_token'] = api_token
     config['export']['incremental'] = True
     config['export']['inspection']['archived'] = "both"
-    config['export']['tables'] = ['inspections', 'inspection_items']
+    config['export']['tables'] = ['inspections', 'inspection_items', 'templates']
 
     # Really a perf thing; might not be required.
     config['export']['modified_after'] = last_run
