@@ -131,7 +131,6 @@ The key tables used by Power BI are the following.
 
 ~~~
 All_Digital_SUF_Weekday
-All_Digital_SUF_volunteer_creating_form
 All_Digital_SUF_form_id
 All_Digital_SUF_job_creation_datetime
 All_Digital_SUF_job_creation_date
@@ -152,10 +151,6 @@ All_Digital_SUF_Domestic_Abu_Ass
 All_Digital_SUF_Other
 All_Digital_SUF_venue_name
 All_Digital_SUF_venue_name_other
-All_Digital_SUF_referred_by
-All_Digital_SUF_age_range
-All_Digital_SUF_has_the_client_drank_alcohol
-All_Digital_SUF_have_drugs_been_consumed
 All_Digital_SUF_has_the_client_sustained_any_injuries
 All_Digital_SUF_does_the_client_require_observations
 All_Digital_SUF_found_alone
@@ -171,7 +166,6 @@ All_Digital_SUF_Advice
 All_Digital_SUF_Safe_Route_Home
 All_Digital_SUF_Shelter
 All_Digital_SUF_Other4
-All_Digital_SUF_job_outcome
 All_Digital_SUF_Calcd_TreatmentTime_Mins_
 All_Digital_SUF_Lost
 All_Digital_SUF_Status_Column
