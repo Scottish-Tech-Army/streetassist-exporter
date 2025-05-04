@@ -11,8 +11,9 @@ echo "SERVER: ${SERVER}"
 error_handler() {
     local exit_code="$?"
     echo "Error occurred at line ${BASH_LINENO[0]}: command '${BASH_COMMAND}' exited with code ${exit_code}" >&2
-    # Wait a moment to ensure all logs flush
-    sleep 1
+
+    # Wait a couple of seconds to give logs time to flush
+    sleep 2
     exit "${exit_code}"
 }
 
@@ -54,26 +55,41 @@ SQLCMD=$(cat write_lasttime.sql | sed "s/THISRUN/${THISRUN}/g")
 echo "    SQL command: \"${SQLCMD}\""
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
 
-# Index everything; very slow when first run
-echo "Create indices"
-for i in "template_id" "item_id" "audit_id" "type"
+# Create duplicates of some columns. This is because we want to index them and use them in views.
+# However, the exporter modifies the table definition, causing a failure of the exporter.
+# We therefore create a duplicate of template_id called (imaginatively) template_id2,
+# copy the data across each time the exporter completes, and use template_id2
+# in our indices and views, and similarly with other fields.
+#
+# Quite why this is only needed for the inspections table is not all that clear, but it seems to
+# be the case.
+echo "Set up duplicate columns in inspections"
+for i in "template_id" "template_name" "audit_id" "date_started" "date_completed"
 do
-    echo "  ${i} in inspection_items"
+    echo "  Duplicate ${i}"
     SQLCMD="IF NOT EXISTS (
-        SELECT 1
-        FROM sys.indexes
-        WHERE name = 'IX_InspectionItems_${i}' AND object_id = OBJECT_ID('dbo.inspection_items')
-    )
-    BEGIN
-        CREATE INDEX IX_InspectionItems_${i}
-        ON dbo.inspection_items (${i});
-    END;"
+                SELECT 1
+                FROM sys.columns
+                WHERE object_id = OBJECT_ID(N'dbo.inspections')
+                AND name = '${i}2'
+            )
+            BEGIN
+                ALTER TABLE dbo.inspections
+                    ADD ${i}2 NVARCHAR(255) NULL;
+            END;
+            GO
 
+            UPDATE dbo.inspections
+            SET ${i}2 = ${i}
+            WHERE ${i}2 IS NULL;"
+    echo $SQLCMD
     sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
 done
 
+# Index everything; very slow when first run
 # Would like to index "template_name", but it is arbitrary length, so SQL says no.
-for i in "date_started" "template_id" "audit_id"
+echo "Create indices for inspections"
+for i in "date_started2" "audit_id2" "template_id2"
 do
     echo "  ${i} in inspections"
     SQLCMD="IF NOT EXISTS (
@@ -89,22 +105,38 @@ do
     sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
 done
 
-# Would like to index "name", but it is arbitrary length, so SQL says no.
-for i in "template_id"
+# Would like to index "template_id", but that causes issues with the exporter.
+echo "Create indices for inspection_items"
+for i in "item_id" "audit_id" "type"
 do
-    echo "  ${i} in templates"
+    echo "  ${i} in inspection_items"
     SQLCMD="IF NOT EXISTS (
         SELECT 1
         FROM sys.indexes
-        WHERE name = 'IX_Templates_${i}' AND object_id = OBJECT_ID('dbo.templates')
+        WHERE name = 'IX_InspectionItems_${i}' AND object_id = OBJECT_ID('dbo.inspection_items')
     )
     BEGIN
-        CREATE INDEX IX_Templates_${i}
-        ON dbo.templates (${i});
+        CREATE INDEX IX_InspectionItems_${i}
+        ON dbo.inspection_items (${i});
     END;"
 
     sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
 done
+
+# An index intended to make the joins quick
+echo "  composite join index"
+SQLCMD="IF NOT EXISTS (
+            SELECT 1
+            FROM sys.indexes
+            WHERE name = 'IX_inspection_items_AuditTypeItem'
+        )
+        BEGIN
+            CREATE INDEX IX_inspection_items_AuditTypeItem
+            ON inspection_items (audit_id, type, item_id)
+            INCLUDE (response, label);
+        END;"
+
+sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
 
 # Create the views.
 echo "Create views"

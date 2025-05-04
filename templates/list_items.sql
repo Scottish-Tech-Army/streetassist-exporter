@@ -9,5 +9,4 @@ FROM inspection_items i
 JOIN templates t
   ON i.template_id = t.template_id
 WHERE
-    i.type = 'list'
-    -- i.type = 'question' OR i.type = 'list'
+    i.type = 'textsingle'
