@@ -55,6 +55,18 @@ SQLCMD=$(cat write_lasttime.sql | sed "s/THISRUN/${THISRUN}/g")
 echo "    SQL command: \"${SQLCMD}\""
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
 
+# Update some values. This is because we do not want to store PII in our temporary tables;
+# we do not need it for any metrics or dashboards.
+echo "Rip out PII"
+SQLCMD="UPDATE dbo.inspection_items
+        SET response = 'REDACTED'
+        WHERE (
+            item_id = 'c5fdc387-cd95-4d04-b278-2c482775062c' -- Client name
+            OR item_id = '3c4c2a04-e72f-434a-a61e-efc4f250a5d6' -- SU address
+            OR item_id = '7b62a613-236c-4558-a4f1-eda056125881' -- Job Narrative (often contains PII)
+        ) AND response != 'REDACTED';"
+sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
+
 # Create duplicates of some columns. This is because we want to index them and use them in views.
 # However, the exporter modifies the table definition, causing a failure of the exporter.
 # We therefore create a duplicate of template_id called (imaginatively) template_id2,
