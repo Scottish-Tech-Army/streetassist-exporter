@@ -125,56 +125,7 @@ This is post processed to extract the relevant information by selecting on the f
 
 The key tables used by Power BI are the following.
 
-### All SUF data table
-
-*Work in progress - will remove and point at view definitions once they are complete*
-
-~~~
-All_Digital_SUF_Weekday
-All_Digital_SUF_form_id
-All_Digital_SUF_job_creation_datetime
-All_Digital_SUF_job_creation_date
-All_Digital_SUF_job_creation_time
-All_Digital_SUF_Alcohol
-All_Digital_SUF_Drugs
-All_Digital_SUF_Phone_Charge
-All_Digital_SUF_Distressed
-All_Digital_SUF_Lost_Friends
-All_Digital_SUF_Mental_Health
-All_Digital_SUF_Getting_Home
-All_Digital_SUF_Friendly_Ear
-All_Digital_SUF_First_Aid
-All_Digital_SUF_Assault
-All_Digital_SUF_Sexual
-All_Digital_SUF_Hate_Crime
-All_Digital_SUF_Domestic_Abu_Ass
-All_Digital_SUF_Other
-All_Digital_SUF_venue_name
-All_Digital_SUF_venue_name_other
-All_Digital_SUF_has_the_client_sustained_any_injuries
-All_Digital_SUF_does_the_client_require_observations
-All_Digital_SUF_found_alone
-All_Digital_SUF_type_of_involvement
-All_Digital_SUF_client_provisions
-All_Digital_SUF_Contact_Family
-All_Digital_SUF_Contact_Friend
-All_Digital_SUF_Emotional_Support
-All_Digital_SUF_First_Aid2
-All_Digital_SUF_Phone_Charge3
-All_Digital_SUF_Water_Tea
-All_Digital_SUF_Advice
-All_Digital_SUF_Safe_Route_Home
-All_Digital_SUF_Shelter
-All_Digital_SUF_Other4
-All_Digital_SUF_Calcd_TreatmentTime_Mins_
-All_Digital_SUF_Lost
-All_Digital_SUF_Status_Column
-All_Digital_SUF_Column239
-All_Digital_SUF_Column240
-All_Digital_SUF_Column241
-All_Digital_SUF_Column242
-All_Digital_SUF_Column243
-~~~
+*TODO: document the views that Power BI relies on*
 
 ## Database tables
 
