@@ -21,11 +21,7 @@ def set_config(api_token, connection_string, last_run):
     logger.info("Set up configuration")
     os.chdir(DIR)
     # Execute the command
-    result = subprocess.run([COMMAND, "configure"],
-                            check=True,
-                            text=True,
-                            stdout=sys.stdout,
-                            stderr=sys.stderr)
+    result = subprocess.run(f"{COMMAND} configure", shell=True, check=True, text=True)
 
     # Load the existing configuration from the YAML file
     with open(CFG_FILE, 'r') as file:
@@ -35,7 +31,7 @@ def set_config(api_token, connection_string, last_run):
     config['access_token'] = api_token
     config['export']['incremental'] = True
     config['export']['inspection']['archived'] = "both"
-    config['export']['tables'] = ['inspections', 'inspection_items']
+    config['export']['tables'] = ['inspections', 'inspection_items', 'templates']
 
     # Really a perf thing; might not be required.
     config['export']['modified_after'] = last_run
@@ -50,11 +46,7 @@ def set_config(api_token, connection_string, last_run):
 
 def export_data():
     logger.info("Download all the data")
-    result = subprocess.run([COMMAND, "sql"],
-                        check=True,
-                        text=True,
-                        stdout=sys.stdout,
-                        stderr=sys.stderr)
+    result = subprocess.run(f"{COMMAND} sql", shell=True, check=True, text=True)
 
 # Do the things
 logger.info("Get started")

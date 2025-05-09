@@ -11,8 +11,9 @@ echo "SERVER: ${SERVER}"
 error_handler() {
     local exit_code="$?"
     echo "Error occurred at line ${BASH_LINENO[0]}: command '${BASH_COMMAND}' exited with code ${exit_code}" >&2
-    # Wait a moment to ensure all logs flush
-    sleep 1
+
+    # Wait a couple of seconds to give logs time to flush
+    sleep 2
     exit "${exit_code}"
 }
 
@@ -52,6 +53,135 @@ python load_data.py
 echo "Write out the time of this run"
 SQLCMD=$(cat write_lasttime.sql | sed "s/THISRUN/${THISRUN}/g")
 echo "    SQL command: \"${SQLCMD}\""
+sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
+
+# Update some values. This is because we do not want to store PII in our temporary tables;
+# we do not need it for any metrics or dashboards.
+echo "Rip out PII"
+SQLCMD="UPDATE dbo.inspection_items
+        SET response = 'REDACTED'
+        WHERE (
+
+            item_id = 'c5fdc387-cd95-4d04-b278-2c482775062c' -- Client name
+            OR item_id = '3c4c2a04-e72f-434a-a61e-efc4f250a5d6' -- SU address
+            OR item_id = '44e7be75-c35b-491c-8326-d35857f4172f' -- Full name
+            OR item_id = '7b62a613-236c-4558-a4f1-eda056125881' -- Job Narrative (often contains PII)
+        ) AND response != 'REDACTED';"
+sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
+
+# Add a service date column, that we can then index; note the 12 hour adjustment.
+echo "Add date column"
+SQLCMD="IF NOT EXISTS (
+            SELECT *
+            FROM sys.columns
+            WHERE Name = N'service_date'
+            AND Object_ID = Object_ID(N'dbo.inspections')
+        )
+        BEGIN
+            ALTER TABLE dbo.inspections
+            ADD service_date DATE;
+        END
+        GO
+        UPDATE dbo.inspections
+        SET service_date = CONVERT(date, DATEADD(hour, -12, conducted_on))
+        WHERE service_date IS NULL AND conducted_on IS NOT NULL;"
+sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
+
+# Create duplicates of some columns. This is because we want to index them and use them in views.
+# However, the exporter modifies the table definition, causing a failure of the exporter.
+# We therefore create a duplicate of template_id called (imaginatively) template_id2,
+# copy the data across each time the exporter completes, and use template_id2
+# in our indices and views, and similarly with other fields.
+#
+# Quite why this is only needed for the inspections table is not all that clear, but it seems to
+# be the case.
+echo "Set up duplicate columns in inspections"
+for i in "template_id" "template_name" "audit_id" "date_started" "date_completed" "conducted_on"
+do
+    echo "  Duplicate ${i}"
+    SQLCMD="IF NOT EXISTS (
+                SELECT 1
+                FROM sys.columns
+                WHERE object_id = OBJECT_ID(N'dbo.inspections')
+                AND name = '${i}2'
+            )
+            BEGIN
+                ALTER TABLE dbo.inspections
+                    ADD ${i}2 NVARCHAR(255) NULL;
+            END;
+            GO
+
+            UPDATE dbo.inspections
+            SET ${i}2 = ${i}
+            WHERE ${i}2 IS NULL;"
+    echo $SQLCMD
+    sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
+done
+
+# Index everything; very slow when first run
+# Would like to index "template_name", but it is arbitrary length, so SQL says no.
+echo "Create indices for inspections"
+for i in "date_started2" "audit_id2" "template_id2" "service_date" "conducted_on2"
+do
+    echo "  ${i} in inspections"
+    SQLCMD="IF NOT EXISTS (
+        SELECT 1
+        FROM sys.indexes
+        WHERE name = 'IX_Inspections_${i}' AND object_id = OBJECT_ID('dbo.inspections')
+    )
+    BEGIN
+        CREATE INDEX IX_Inspections_${i}
+        ON dbo.inspections (${i});
+    END;"
+
+    sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
+done
+
+# Would like to index "template_id", but that causes issues with the exporter.
+echo "Create indices for inspection_items"
+for i in "item_id" "audit_id" "type"
+do
+    echo "  ${i} in inspection_items"
+    SQLCMD="IF NOT EXISTS (
+        SELECT 1
+        FROM sys.indexes
+        WHERE name = 'IX_InspectionItems_${i}' AND object_id = OBJECT_ID('dbo.inspection_items')
+    )
+    BEGIN
+        CREATE INDEX IX_InspectionItems_${i}
+        ON dbo.inspection_items (${i});
+    END;"
+
+    sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
+done
+
+# An index intended to make the joins quick
+echo "  composite join index"
+SQLCMD="IF NOT EXISTS (
+            SELECT 1
+            FROM sys.indexes
+            WHERE name = 'IX_inspection_items_AuditTypeItem'
+        )
+        BEGIN
+            CREATE INDEX IX_inspection_items_AuditTypeItem
+            ON inspection_items (audit_id, type, item_id)
+            INCLUDE (response, label);
+        END;"
+
+sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
+
+# A join index for the summary
+echo "  summary index"
+SQLCMD="IF NOT EXISTS (
+            SELECT 1
+            FROM sys.indexes
+            WHERE name = 'IX_inspections_service_date'
+        )
+        BEGIN
+            CREATE UNIQUE CLUSTERED INDEX IX_inspections_service_date
+            ON inspections (service_date);
+        END;"
+
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
 
 # Create the views.
