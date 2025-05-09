@@ -1,6 +1,12 @@
-# Deployment
+# Deployment and management
 
 ## Initial deployment creation
+
+### Prerequisites
+
+*TODO: Azure subscription, access key to Safety Culture*
+
+### Setting up resources in Azure
 
 Follow the following steps.
 
@@ -39,37 +45,47 @@ Follow the following steps.
     bash scripts/deploy.sh
     ~~~
 
-- Add the field `accessToken` to the Azure key vault using the portal.
+### Setting the access token
 
-    - Find the key vault and click on it.
+This process needs to be performed whenever your access token expires, and involves adding the field `accessToken` to the Azure key vault using the portal.
 
-    - Select `Access policies` from the left hand pane to create an access policy allowing you access to secrets in the key vault.
+- Go to the [Azure portal](portal.azure.com).
 
-        - Select `Create`
+- Find the key vault and click on it.
 
-        - In the `Permissions` screen, `Select all` under `Secret permissions`, and click the `Next` button
+- Select `Access policies` from the left hand pane to create an access policy allowing you access to secrets in the key vault.
 
-        - In the `Principal` screen, search for your own account, and click it, then click the `Next` button
+    - Select `Create`
 
-        - Ignore the `Application` screen, select nothing and click the `Next` button
+    - In the `Permissions` screen, `Select all` under `Secret permissions`, and click the `Next` button
 
-        - Finally, click the `Create` button
+    - In the `Principal` screen, search for your own account, and click it, then click the `Next` button
 
-    - Select `Objects` from the left hand pane to create the secret.
+    - Ignore the `Application` screen, select nothing and click the `Next` button
 
-        - Select `Secrets`
+    - Finally, click the `Create` button
 
-        - Click `Generate/Import`
+- Select `Objects` from the left hand pane to create the secret.
 
-        - Enter `accessToken` as the name
+    - Select `Secrets`
 
-        - Enter your API token for Safety Culture as the `Secret value`
+    - Click `Generate/Import`
 
-        - Click the `Create` button
+    - Enter `accessToken` as the name
+
+    - Enter your API token for Safety Culture as the `Secret value`
+
+    - Click the `Create` button
 
 ## Set up AAD permissions for SQL Server
 
-Find the SQL Server database in the portal.
+This must be done before users can actually use the provisioned data.
+
+### Enable admin access
+
+This process sets yourself up as the Entra managed admin for the SQL Server Database. It only needs to be done once, unless the admin leaves and needs to be replaced.
+
+To do this, find the SQL Server database in the portal.
 
 - Configure AAD access, with yourself as the admin as follows
 
@@ -83,26 +99,28 @@ Find the SQL Server database in the portal.
 
     - Click `Save` at the top of the screen, so the change is not immediately forgotten.
 
-- Set up users in the database as follows.
+### Set up users and groups to have read rights to the data
 
-    - Click on `SQL databases` under `Settings` of the SQL Server instance.
+This must be done to allow individual users to run Power BI reports, and involves entering either their IDs or the ID of a security group they are a member of into the portal.
 
-    - Click on the `sqldb` database.
+- Click on `SQL databases` under `Settings` of the SQL Server instance.
 
-    - Click on `Query Editor`
+- Click on the `sqldb` database.
 
-    - Do not enter a password; you should click the `Continue as yourmail@yourdomain` button.
+- Click on `Query Editor`
 
-    - Enter the following for each user you wish to grant rights, assuming that their email is `user@domain`.
+- Do not enter a password; you should click the `Continue as yourmail@yourdomain` button.
 
-        ```sql
-        CREATE USER [user@domain] FROM EXTERNAL PROVIDER;
-        ALTER ROLE db_datareader ADD MEMBER [user@domain];
-        ```
+- Enter the following for each user you wish to grant rights, assuming that their email is `user@domain`.
 
-    - If you want to grant permissions to a security group, then create a security group in the Entra admin centre, and then do
+    ```sql
+    CREATE USER [user@domain] FROM EXTERNAL PROVIDER;
+    ALTER ROLE db_datareader ADD MEMBER [user@domain];
+    ```
 
-        ```sql
-        CREATE USER [SecurityGroupName] FROM EXTERNAL PROVIDER;
-        ALTER ROLE db_datareader ADD MEMBER [SecurityGroupName];
-        ```
+- If you want to grant permissions to a security group, then create a security group in the Entra admin centre, and then do
+
+    ```sql
+    CREATE USER [SecurityGroupName] FROM EXTERNAL PROVIDER;
+    ALTER ROLE db_datareader ADD MEMBER [SecurityGroupName];
+    ```
