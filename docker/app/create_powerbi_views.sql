@@ -213,35 +213,41 @@ SELECT
     SUM(CASE WHEN i.residency = 'Local to Edinburgh' THEN 1 ELSE 0 END) as Local,
     SUM(CASE WHEN i.residency = 'Student' THEN 1 ELSE 0 END) as Student,
     SUM(CASE WHEN i.residency = 'Tourist' THEN 1 ELSE 0 END) as Tourist_Holiday,
-    SUM(CASE WHEN i.residency = 'Visiting' THEN 1 ELSE 0 END) as Visiting_,
+    SUM(CASE WHEN i.residency = 'Visiting' THEN 1 ELSE 0 END) as Visiting,
     SUM(CASE WHEN i.residency = 'Homeless' THEN 1 ELSE 0 END) as Homeless,
     -- where_do_they_study
     SUM(CASE WHEN i.where_do_they_study = 'Edinburgh Uni' THEN 1 ELSE 0 END) as EDI_Uni,
     SUM(CASE WHEN i.where_do_they_study = 'Heriot Watt Uni' THEN 1 ELSE 0 END) as HW_Uni,
     SUM(CASE WHEN i.where_do_they_study = 'Queen Margaret Uni' THEN 1 ELSE 0 END) as QMU,
     SUM(CASE WHEN i.where_do_they_study = 'Napier Uni' THEN 1 ELSE 0 END) as Napier,
-    -- TODO: add LIVE_REPORT_DATA_Academic_Other -- probably "any other university"
+    -- Data expects this, even though no examples
+    0 as EDI_Coll,
+    SUM(CASE WHEN i.where_do_they_study IS NOT NULL AND
+                  i.where_do_they_study NOT IN ('Edinburgh Uni', 'Heriot Watt Uni', 'Queen Margaret Uni', 'Napier Uni')
+        THEN 1 ELSE 0 END) as Academic_Other,
     -- referred_by
     SUM(CASE WHEN i.referred_by LIKE '%General Public%' THEN 1 ELSE 0 END) as General_Public,
     SUM(CASE WHEN i.referred_by LIKE '%Street Pastor%' THEN 1 ELSE 0 END) as Street_Pastor,
     SUM(CASE WHEN i.referred_by LIKE '%Street Assist%' THEN 1 ELSE 0 END) as Street_Assist,
     SUM(CASE WHEN i.referred_by LIKE '%Partner / Friend%' THEN 1 ELSE 0 END) as Partner_Friend,
-    SUM(CASE WHEN i.referred_by LIKE '%Transport Police%' THEN 1 ELSE 0 END) as Police_BTP,
+    -- This can match either "Police" or "Transport Police", but we bundle together anyway
+    SUM(CASE WHEN i.referred_by LIKE '%Police%' THEN 1 ELSE 0 END) as Police_BTP,
     SUM(CASE WHEN i.referred_by LIKE '%Pub / Club%' THEN 1 ELSE 0 END) as Pub_Club,
     SUM(CASE WHEN i.referred_by LIKE '%Self-Refer%' THEN 1 ELSE 0 END) as Self_Refer,
     SUM(CASE WHEN i.referred_by LIKE '%Taxi Marshall%' THEN 1 ELSE 0 END) as Taxi_Marshall,
     SUM(CASE WHEN i.referred_by LIKE '%SAS%' THEN 1 ELSE 0 END) as Ambulance,
     SUM(CASE WHEN i.referred_by LIKE '%Lothian Buses%' OR i.referred_by LIKE '%Edin Trams%' THEN 1 ELSE 0 END) as Lothian_Buses,
     SUM(CASE WHEN i.referred_by LIKE '%Community Safety%' THEN 1 ELSE 0 END) as Com_Safety,
+    SUM(CASE WHEN i.referred_by LIKE '%CCTV%' THEN 1 ELSE 0 END) as CCTV_Control,
     -- TODO: fix spelling, but need to work it through the Power BI dashboards too.
     SUM(CASE WHEN i.referred_by LIKE '%Other%' OR i.referred_by LIKE '%Not On List%' THEN 1 ELSE 0 END) as Refferal_Other,
     -- job_category
     SUM(CASE WHEN i.job_category LIKE '%Alcohol%' THEN 1 ELSE 0 END) as Alcohol,
     SUM(CASE WHEN i.job_category LIKE '%Drugs%' THEN 1 ELSE 0 END) as Drugs,
-    -- TODO: There is no "Lost" category in the actual data, so ignoring this
-    -- SUM(CASE WHEN i.job_category LIKE '%Advice%' THEN 1 ELSE 0 END) as Lost,
     SUM(CASE WHEN i.job_category LIKE '%Phone Charge%' THEN 1 ELSE 0 END) as Phone_Charge,
     SUM(CASE WHEN i.job_category LIKE '%Distressed%' THEN 1 ELSE 0 END) as Distressed,
+    -- TODO: Seems odd that we have both "Lost" and "Lost Friends"
+    SUM(CASE WHEN i.job_category LIKE '%Lost Friends%' THEN 1 ELSE 0 END) as Lost,
     SUM(CASE WHEN i.job_category LIKE '%Lost Friends%' THEN 1 ELSE 0 END) as Lost_Friends,
     SUM(CASE WHEN i.job_category LIKE '%Mental Health%' THEN 1 ELSE 0 END) as Mental_Health,
     SUM(CASE WHEN i.job_category LIKE '%Issues Getting Home%' THEN 1 ELSE 0 END) as Getting_Home,
@@ -275,6 +281,7 @@ SELECT
     SUM(CASE WHEN i.job_outcome LIKE '%Taxi home%' THEN 1 ELSE 0 END) as Taxi_Home,
     SUM(CASE WHEN i.job_outcome LIKE '%Taxi_to_ERI%' OR i.job_outcome LIKE '%Taxi to Edinburgh Royal Inf%' THEN 1 ELSE 0 END) as Taxi_to_ERI,
     SUM(CASE WHEN i.job_outcome LIKE '%Stood Down%' THEN 1 ELSE 0 END) as Stood_Down,
+    SUM(CASE WHEN i.job_outcome LIKE '%Arrested%' THEN 1 ELSE 0 END) as Arrested,
     -- client_provisions
     -- TODO: Poor naming, but need to fix PowerBI too
     SUM(CASE WHEN i.client_provisions LIKE '%First Aid%' THEN 1 ELSE 0 END) as First_Aid_2,
