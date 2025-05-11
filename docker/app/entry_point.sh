@@ -24,6 +24,7 @@ echo "Entry point running"
 
 if [[ -z "${API_TOKEN:-}" ]]; then
     echo "Environment variable API_TOKEN not set - read from key vault ${KEYVAULTNAME} using ID ${UAMI_CLIENT_ID}"
+
     # For the mad workaround, there is this reference: https://github.com/Azure/azure-cli/issues/22677
     export APPSETTING_WEBSITE_SITE_NAME=DUMMY
     az login --identity --client-id ${UAMI_CLIENT_ID}
@@ -55,37 +56,16 @@ SQLCMD=$(cat write_lasttime.sql | sed "s/THISRUN/${THISRUN}/g")
 echo "    SQL command: \"${SQLCMD}\""
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
 
-# Update some values. This is because we do not want to store PII in our temporary tables;
-# we do not need it for any metrics or dashboards.
-echo "Rip out PII"
-SQLCMD="UPDATE dbo.inspection_items
-        SET response = 'REDACTED'
-        WHERE (
+echo "Update tables"
+sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i update_tables.sql
 
-            item_id = 'c5fdc387-cd95-4d04-b278-2c482775062c' -- Client name
-            OR item_id = '3c4c2a04-e72f-434a-a61e-efc4f250a5d6' -- SU address
-            OR item_id = '44e7be75-c35b-491c-8326-d35857f4172f' -- Full name
-            OR item_id = '7b62a613-236c-4558-a4f1-eda056125881' -- Job Narrative (often contains PII)
-        ) AND response != 'REDACTED';"
-sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
-
-# Add a service date column, that we can then index; note the 12 hour adjustment.
-echo "Add date column"
-SQLCMD="IF NOT EXISTS (
-            SELECT *
-            FROM sys.columns
-            WHERE Name = N'service_date'
-            AND Object_ID = Object_ID(N'dbo.inspections')
-        )
-        BEGIN
-            ALTER TABLE dbo.inspections
-            ADD service_date DATE;
-        END
-        GO
-        UPDATE dbo.inspections
-        SET service_date = CONVERT(date, DATEADD(hour, -12, conducted_on))
-        WHERE service_date IS NULL AND conducted_on IS NOT NULL;"
-sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
+echo "Bulk import the places table data."
+# TODO: refactor for multiple files, and probably put files in a directory
+CSV=places.csv
+TSV=/tmp/places.tsv
+az storage blob download -f "./${CSV}" -c csvdata -n "${CSV}" --account-name ${STORAGEACCOUNTNAME} --auth-mode login
+sed -E 's/([0-9]+\.[0-9]{8})[0-9]*/\1/g' "./${CSV}" | sed "s/\n//g" | csvformat -T -d "," > ${TSV}
+bcp dbo.places in ${TSV} -S ${SERVER} -U ${ADMINUSER} -P ${ADMINPWD} -d ${DB} -c -r"\n" -F 2
 
 # Create duplicates of some columns. This is because we want to index them and use them in views.
 # However, the exporter modifies the table definition, causing a failure of the exporter.

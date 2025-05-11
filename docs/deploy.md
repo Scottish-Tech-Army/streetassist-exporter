@@ -77,6 +77,12 @@ This process needs to be performed whenever your access token expires, and invol
 
     - Click the `Create` button
 
+### Uploading data files
+
+*TODO: To be provided - just document the portal steps, for the files.*
+
+- `places.csv`
+
 ## Set up AAD permissions for SQL Server
 
 This must be done before users can actually use the provisioned data.

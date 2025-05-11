@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     gnupg \
     bash \
+    csvkit \
   && rm -rf /var/lib/apt/lists/*
 
 RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
@@ -20,14 +21,17 @@ RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
 RUN apt-get update && ACCEPT_EULA=Y apt-get install -y --no-install-recommends \
     mssql-tools \
     msodbcsql17 \
-  && ln -s /opt/mssql-tools/bin/sqlcmd /usr/local/bin/sqlcmd \
   && rm -rf /var/lib/apt/lists/*
+
+# Add the Microsoft SQL Server tools to the PATH.
+ENV PATH="/opt/mssql-tools/bin:${PATH}"
+
 
 # Optionally, install any Python dependencies.
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy your application code.
+# Copy the application code.
 COPY ./app /app
 WORKDIR /app
 
