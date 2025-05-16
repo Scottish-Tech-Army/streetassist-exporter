@@ -48,7 +48,7 @@ echo "    This run time: ${THISRUN}"
 
 # Do the export
 echo "Run the export tool"
-python load_data.py
+python export_data.py
 
 # Write the timestamp when last run.
 echo "Write out the time of this run"
@@ -56,16 +56,11 @@ SQLCMD=$(cat write_lasttime.sql | sed "s/THISRUN/${THISRUN}/g")
 echo "    SQL command: \"${SQLCMD}\""
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
 
-echo "Update tables"
+echo "Update tables including removal of PII and setting up of bulk import tables"
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i update_tables.sql
 
-echo "Bulk import the places table data."
-# TODO: refactor for multiple files, and probably put files in a directory
-CSV=places.csv
-TSV=/tmp/places.tsv
-az storage blob download -f "./${CSV}" -c csvdata -n "${CSV}" --account-name ${STORAGEACCOUNTNAME} --auth-mode login
-sed -E 's/([0-9]+\.[0-9]{8})[0-9]*/\1/g' "./${CSV}" | sed "s/\n//g" | csvformat -T -d "," > ${TSV}
-bcp dbo.places in ${TSV} -S ${SERVER} -U ${ADMINUSER} -P ${ADMINPWD} -d ${DB} -c -r"\n" -F 2
+echo "Bulk import the manually uploaded data."
+python load_csv.py
 
 # Create duplicates of some columns. This is because we want to index them and use them in views.
 # However, the exporter modifies the table definition, causing a failure of the exporter.

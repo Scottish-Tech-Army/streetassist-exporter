@@ -42,3 +42,15 @@ CREATE TABLE dbo.places (
         icon_hex NVARCHAR(255)
 );
 GO
+
+-- Create the historical WelfareChecks table
+DROP TABLE IF EXISTS dbo.manual_welfare_checks;
+GO
+CREATE TABLE dbo.manual_welfare_checks (
+        audit_id NVARCHAR(255) NOT NULL PRIMARY KEY,
+        service_date DATE NOT NULL,
+        gender DATETIME,
+        location NVARCHAR(255),
+        check_type NVARCHAR(MAX)
+);
+GO
