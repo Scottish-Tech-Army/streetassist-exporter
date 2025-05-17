@@ -167,4 +167,8 @@ sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_views.s
 echo "    Power BI source views"
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_powerbi_views.sql
 
+# Turning views into tables is necessary to ensure that we can combine historic and live data.
+echo "    Power BI source source tables"
+sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_powerbi_tables.sql
+
 echo "SUCCESS"

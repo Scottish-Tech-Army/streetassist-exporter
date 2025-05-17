@@ -8,7 +8,7 @@ import subprocess
 import sys
 import yaml
 
-FILELIST = ["places"]
+FILELIST = ["places", "historic_welfare_checks"]
 STORAGEACCOUNTNAME = os.environ["STORAGEACCOUNTNAME"]
 SERVER = os.environ["SERVER"]
 ADMINUSER = os.environ["ADMINUSER"]
@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.INFO,
 def download_csv(csvfile):
     logger.info("Downloading CSV file %s", csvfile)
     cmd = f"az storage blob download -f \"/tmp/{csvfile}\" -c csvdata -n {csvfile} --account-name {STORAGEACCOUNTNAME} --auth-mode login"
-    result = subprocess.run(cmd, shell=True, check=True, text=True)
+    result = subprocess.run(cmd, shell=True, check=True, text=True, stdout=subprocess.DEVNULL)
 
 def upload_tsv(file, tsvfile):
     logger.info("Uploading TSV file %s", tsvfile)
@@ -97,8 +97,8 @@ for file in FILELIST:
                 # Remove BOM and quotes from each cell in the row
                 clean_row = []
                 for cell in row:
-                    # Remove BOM
-                    cell = cell.replace('\ufeff', '')
+                    # Remove BOM, and CRs and LFs
+                    cell = cell.replace('\ufeff', '').replace("\r", "").replace("\n", "")
                     # Truncate decimals if matches pattern: optional -, 1-2 digits, ., >8 decimals
                     match = re.match(r'^-?\d{1,2}\.(\d{9,})$', cell)
                     if match:

@@ -150,18 +150,6 @@ SELECT
 FROM dbo.inspectionview i
 GO
 
-CREATE OR ALTER VIEW dbo.WelfareChecks
-WITH SCHEMABINDING
-AS
-SELECT
-    i.audit_id as auditID,
-    i.service_date as Conducted,
-    i.gender as Gender,
-    i.location as Location,
-    i.check_type as Type
-FROM dbo.welfarecheckview i
-GO
-
 -- TODO: This view is unusably slow
 -- We avoid using COUNT or AVG as they interfere with materialised views.
 CREATE OR ALTER VIEW dbo.SummaryView

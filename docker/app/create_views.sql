@@ -2,8 +2,6 @@
 -- Clear out the views that depend on this one; needed as they have schemabinding (i.e. are materialised)
 DROP VIEW IF EXISTS dbo.AllDigitalSUF;
 GO
-DROP VIEW IF EXISTS dbo.WelfareChecks;
-GO
 DROP VIEW IF EXISTS dbo.SummaryView;
 GO
 DROP VIEW IF EXISTS dbo.signincount;
