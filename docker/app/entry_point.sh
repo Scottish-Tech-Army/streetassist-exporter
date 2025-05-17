@@ -50,9 +50,9 @@ echo "    This run time: ${THISRUN}"
 echo "Run the export tool"
 python export_data.py
 
-# Write the timestamp when last run.
+# Write the timestamp when last run, as the export succeeded.
 echo "Write out the time of this run"
-SQLCMD=$(cat write_lasttime.sql | sed "s/THISRUN/${THISRUN}/g")
+SQLCMD="UPDATE dbo.JobTimestamp SET LastRunTime = '${THISRUN}';"
 echo "    SQL command: \"${SQLCMD}\""
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
 
@@ -164,11 +164,11 @@ echo "Create views"
 echo "    Main views"
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_views.sql
 
-echo "    Power BI source views"
-sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_powerbi_views.sql
+echo "    Secondary views"
+sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_secondary_views.sql
 
 # Turning views into tables is necessary to ensure that we can combine historic and live data.
-echo "    Power BI source source tables"
+echo "    Power BI source tables"
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_powerbi_tables.sql
 
 echo "SUCCESS"

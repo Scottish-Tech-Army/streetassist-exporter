@@ -60,6 +60,63 @@ Interesting fields include the following
 | label                    | Identifier (such as question wording)  |          |
 | response                 | Response given | Data for output         |
 
+### Updates to Safety Culture based tables
+
+After the Safety Culture data is exported, the table data is modified, with the addition of various indices, and the removal of PII.
+
+## Base data tables and views
+
+Once we have the data from Safety Culture, we need to combine the items and inspections tables.
+
+### Inspection view
+
+The view `inspectionview` contains data about all inspections using the various "Service User Form" templates. It is created by joining the `inspections` and `inspection_items` fields, filtering on `template_id`, and then extracting appropriate fields (based largely on `item_id`) to extract all relevant information about an interaction.
+
+### Welfare Checks
+
+The view `welfarecheckview` contains data about all inspections using the "Welfare Check" template. It is created by joining the `inspections` and `inspection_items` fields, filtering on `template_id`, and then extracting appropriate fields to extract all relevant information about a welfare check.
+
+### Sign in view
+
+The views `signinview` and `signincount` are used to track volunteer signins.
+
+- The view `signinview` extracts the names of each volunteer who signed in on a given night, by selecting from `inspections` where the `template_id` matches the "Sign in" template.
+
+- The view `signincount` converts the sign in data into nightly counts. It also performs some useful calculations used later (converting number of volunteers into equivalent costs at different wage rates, and calculating number of hours worked based on 7 hours per shift).
+
+### Historic data
+
+Various sets of historic data (from before Safety Culture) are loaded from csv files into tables.
+
+- The table `historic_all_suf` contains historic data about all users of the SUF forms.
+
+- The table `historic_welfare_checks` contains historic welfare check data.
+
+- The table `places` is just directly used, but comes from CSV.
+
+## Parsing subfields into views for Power BI
+
+Various views are now created that extract data
+
+- The view `AllDigitalSUF` contains the contents of `inspectionview` appropriately filtered. This map is fairly straightforward, but not totally trivial. For examples, `inspectionview` contains the job outcome (extracted from a field in `inspection_items`) as `job_outcome`, and it is in this view that the outcome values are parsed.
+
+- The view `SummaryView` is a nightly summary. It combines data from `signincount` (to extract the number of volunteers each night) with data from `inspectionview`, and sums the data for all interactions over the night (for example, counting how many interactions had each type of outcome).
+
+## Creating Power BI tables
+
+The Power BI report uses a range of tables. These tables are constructed largely by combining historic CSV data with data extracted from Safety Culture.
+
+- The table `places` is just a set of known places uploaded from CSV.
+
+- The table `WelfareChecks` is a trivial copy of `welfarecheckview` to different column header names, combined with the contents of the uploaded `historic_welfare_checks` table.
+
+
+
+## Other tables
+
+*TODO: There are some other tables required by Power BI that do not exist in the Safety Culture data; to be provided.*
+
+
 ## Other tables
 
 ### Timing table
@@ -68,36 +125,3 @@ The table `dbo.JobTimestamp` contains a single timestamp, containing the last ti
 
 This is because the Safety Culture exporter needs to be passed it in order to only download changes since the last time. If this table is dropped, then a full resync will be done.
 
-## Intermediate views
-
-This summarises the main views created so as to allow data to be used. I'm not going to fully document all views here, as the documentation will get out of date. Check the actual view definitions for details.
-
-### Inspection view
-
-The view `inspectionview` contains data about all inspections using the various "Service User Form" templates. It is created by joining the `inspections` and `inspection_items` fields, filtering on `template_id`, and then extracting appropriate fields to extract all relevant information about an interaction.
-
-### Welfare Checks
-
-The view `welfarecheckview` contains data about all inspections using the "Welfare Check" template. It is created by joining the `inspections` and `inspection_items` fields, filtering on `template_id`, and then extracting appropriate fields to extract all relevant information about a welfare check.
-
-### Sign ins
-
-The views `signinview` and `signincount` are used to track volunteer signins.
-
-- The view `signinview` extracts the names of each volunteer who signed in on a given night, by selecting from `inspections` where the `template_id` matches the "Sign in" template.
-
-- The view `signincount` converts the sign in data into nightly counts. It also performs some useful calculations used later (converting number of volunteers into equivalent costs at different wage rates, and calculating number of hours worked based on 7 hours per shift).
-
-## Power BI views
-
-The Power BI report uses a range of views.
-
-- The view `AllDigitalSUF` contains the contents of `inspectionview` appropriately filtered. This map is fairly straightforward, but not totally trivial. For examples, `inspectionview` contains the job outcome (extracted from a field in `inspection_items`) as `job_outcome`, and it is in this view that the outcome values are parsed.
-
-- The view `WelfareChecks` is a trivial mapping of `welfarecheckview` to different column header names.
-
-- The view `SummaryView` is a nightly summary. It combines data from `signincount` (to extract the number of volunteers each night) with data from `inspectionview`, and sums the data for all interactions over the night (for example, counting how many interactions had each type of outcome).
-
-## Other tables
-
-*TODO: There are some other tables required by Power BI that do not exist in the Safety Culture data; to be provided.*

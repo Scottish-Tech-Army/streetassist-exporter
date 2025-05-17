@@ -84,7 +84,7 @@ resource allowAzureServices 'Microsoft.Sql/servers/firewallRules@2022-02-01-prev
   }
 }
 
-// SQL Database using the Standard tier; we cannot quite fit into 2GB.
+// SQL Database using the Standard tier; we can just about fit into 2GB.
 resource sqlDatabase 'Microsoft.Sql/servers/databases@2021-02-01-preview' = {
   parent: sqlServer
   name: 'sqldb'
@@ -95,8 +95,8 @@ resource sqlDatabase 'Microsoft.Sql/servers/databases@2021-02-01-preview' = {
     maxSizeBytes: 2147483648  // 2 GB max size (adjust if necessary)
   }
   sku: {
-    name: 'S0'
-    tier: 'Standard'
+    name: 'Basic'
+    tier: 'Basic'
   }
 }
 

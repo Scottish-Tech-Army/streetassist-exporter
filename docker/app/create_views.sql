@@ -1,6 +1,7 @@
 -- sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_views.sql
--- Clear out the views that depend on this one; needed as they have schemabinding (i.e. are materialised)
-DROP VIEW IF EXISTS dbo.AllDigitalSUF;
+-- Clear out the views that depend on this one; needed as they have schemabinding (i.e. are indexed)
+PRINT("Drop existing views");
+DROP VIEW IF EXISTS dbo.all_suf_view;
 GO
 DROP VIEW IF EXISTS dbo.SummaryView;
 GO
@@ -8,6 +9,8 @@ DROP VIEW IF EXISTS dbo.signincount;
 GO
 
 -- General inspection view
+PRINT("Create the general inspection view");
+GO
 CREATE OR ALTER VIEW dbo.inspectionview
 WITH SCHEMABINDING
 AS
@@ -35,7 +38,7 @@ SELECT
     MAX(CASE WHEN ii.item_id = 'e5bcd037-e4d7-44ce-8c6e-932de7becd97' AND ii.type = 'question' THEN ii.response END) AS found_alone,
     MAX(CASE WHEN ii.item_id = '27d0c021-90ac-41df-995c-5627cb6c30de' AND ii.type = 'question' THEN ii.response END) AS police_involved,
     MAX(CASE WHEN ii.item_id = '61dbd6c2-276c-44b5-8b15-3f1ddcff5bc2' AND (ii.type = 'question' OR ii.type = 'list') THEN ii.response END) AS ambulance_requested_how,
-    MAX(CASE WHEN ii.item_id = '9891b13a-72a7-46bb-95f5-4fec9ecfca46' AND ii.type = 'list' THEN ii.response END) AS involvement_type,
+    MAX(CASE WHEN ii.item_id = '9891b13a-72a7-46bb-95f5-4fec9ecfca46' AND ii.type = 'list' THEN ii.response END) AS police_involvement_type,
     MAX(CASE WHEN (ii.item_id = '312f86c5-e628-45b7-aa8f-27aae6c2b6dd' OR ii.item_id = '8b3e1a03-b88e-4802-a852-d104f820851e') AND ii.type = 'list' THEN ii.response END) AS age_range,
     MAX(CASE WHEN (ii.item_id = '4d077523-4ee8-4f82-8031-ba2e8a7e0e8a' OR ii.item_id = '5bbf70ac-7433-49b7-9536-e67e7e859c15') AND ii.type = 'list' THEN ii.response END) AS volunteer_creating_form,
     MAX(CASE WHEN (ii.item_id = '467b7d9d-0419-44e0-9f34-7eb485728558' AND ii.type = 'question') OR (ii.item_id = '47a69179-4441-4708-b674-f8cc4c7be8d8' AND ii.type = 'list')  THEN ii.response END) AS gender,
@@ -105,6 +108,8 @@ GO
 
 -- Sign in form data
 -- TODO: This only goes back to 2022-08, while the inspection data goes back further
+PRINT("Create the sign in view");
+GO
 CREATE OR ALTER VIEW dbo.signinview
 WITH SCHEMABINDING
 AS
@@ -123,6 +128,8 @@ GROUP BY
     i.service_date;
 GO
 
+PRINT("Create the sign in count view");
+GO
 CREATE OR ALTER VIEW dbo.signincount
 WITH SCHEMABINDING
 AS

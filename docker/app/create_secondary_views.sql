@@ -1,6 +1,8 @@
 -- sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_powerbi_views.sql
 --
-CREATE OR ALTER VIEW dbo.AllDigitalSUF
+PRINT("Create the all_suv_view");
+GO
+CREATE OR ALTER VIEW dbo.all_suf_view
 WITH SCHEMABINDING
 AS
 SELECT
@@ -9,10 +11,7 @@ SELECT
     FORMAT(TRY_CONVERT(DATE, i.conducted_on), 'ddd', 'en-US') AS Weekday,
     i.volunteer_creating_form as volunteer_creating_form,
     i.form_id as form_id,
-    -- Why we have all these three is beyond me, but it seems that we do
-    CONVERT(DATE, i.date_started) as job_creation_date,
-    i.date_started as job_creation_datetime,
-    i.date_started as job_creation_time,
+    i.job_category as job_category,
     CASE
         WHEN i.job_category COLLATE Latin1_General_CS_AS LIKE '%Assault%' THEN 1
         ELSE 0
@@ -70,57 +69,55 @@ SELECT
         ELSE 0
     END AS Other,
     i.job_location as venue_name,
-    -- TODO: should figure out if we need this
-    'xxx placeholder' as venue_name_other,
     i.injuries as has_the_client_sustained_any_injuries,
     i.observations as does_the_client_require_observations,
     i.found_alone as found_alone,
-    i.involvement_type as type_of_involvement,
+    i.police_involvement_type as type_of_involvement,
     i.client_provisions as client_provisions,
     CASE
-        WHEN i.job_category COLLATE Latin1_General_CS_AS LIKE '%Contact Family%' THEN 1
+        WHEN i.client_provisions COLLATE Latin1_General_CS_AS LIKE '%Contact Family%' THEN 1
         ELSE 0
     END AS Contact_Family,
     CASE
-        WHEN i.job_category COLLATE Latin1_General_CS_AS LIKE '%Contact Friend%' THEN 1
+        WHEN i.client_provisions COLLATE Latin1_General_CS_AS LIKE '%Contact Friend%' THEN 1
         ELSE 0
     END AS Contact_Friend,
     CASE
-        WHEN i.job_category COLLATE Latin1_General_CS_AS LIKE '%Emotional Support%' THEN 1
+        WHEN i.client_provisions COLLATE Latin1_General_CS_AS LIKE '%Emotional Support%' THEN 1
         ELSE 0
     END AS Emotional_Support,
     CASE
-        WHEN i.job_category COLLATE Latin1_General_CS_AS LIKE '%First Aid%' THEN 1
+        WHEN i.client_provisions COLLATE Latin1_General_CS_AS LIKE '%First Aid%' THEN 1
         ELSE 0
     END AS First_Aid2,
     CASE
-        WHEN i.job_category COLLATE Latin1_General_CS_AS LIKE '%Phone Charge%' THEN 1
+        WHEN i.client_provisions COLLATE Latin1_General_CS_AS LIKE '%Phone Charge%' THEN 1
         ELSE 0
     END AS Phone_Charge3,
     CASE
-        WHEN i.job_category COLLATE Latin1_General_CS_AS LIKE '%Water%' THEN 1
+        WHEN i.client_provisions COLLATE Latin1_General_CS_AS LIKE '%Water%' THEN 1
         ELSE 0
     END AS Water_Tea,
     CASE
-        WHEN i.job_category COLLATE Latin1_General_CS_AS LIKE '%Advice%' THEN 1
+        WHEN i.client_provisions COLLATE Latin1_General_CS_AS LIKE '%Advice%' THEN 1
         ELSE 0
     END AS Advice,
     CASE
-        WHEN i.job_category COLLATE Latin1_General_CS_AS LIKE '%Safe Route Home%' THEN 1
+        WHEN i.client_provisions COLLATE Latin1_General_CS_AS LIKE '%Safe Route Home%' THEN 1
         ELSE 0
     END AS Safe_Route_Home,
     CASE
-        WHEN i.job_category COLLATE Latin1_General_CS_AS LIKE '%Shelter%' THEN 1
+        WHEN i.client_provisions COLLATE Latin1_General_CS_AS LIKE '%Shelter%' THEN 1
         ELSE 0
     END AS Shelter,
     CASE
-        WHEN i.job_category COLLATE Latin1_General_CS_AS LIKE '%Other%' THEN 1
+        WHEN i.client_provisions COLLATE Latin1_General_CS_AS LIKE '%Other%' THEN 1
         ELSE 0
     END AS Other4,
     CASE
-        WHEN i.job_category COLLATE Latin1_General_CS_AS LIKE '%Other%' THEN 1
+        WHEN i.client_provisions COLLATE Latin1_General_CS_AS LIKE '%Other%' THEN 1
         ELSE 0
-    END AS OtherOutcome,
+    END AS provisions_other,
     TRY_CONVERT(INT, i.total_job_minutes) as Calcd_TreatmentTime_Mins_,
     i.age_range as age_range,
     i.gender as gender,
@@ -152,6 +149,8 @@ GO
 
 -- TODO: This view is unusably slow
 -- We avoid using COUNT or AVG as they interfere with materialised views.
+PRINT("Create the SummaryView");
+GO
 CREATE OR ALTER VIEW dbo.SummaryView
 WITH SCHEMABINDING
 AS
