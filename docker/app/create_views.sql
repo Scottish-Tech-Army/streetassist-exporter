@@ -3,7 +3,7 @@
 PRINT("Drop existing views");
 DROP VIEW IF EXISTS dbo.all_suf_view;
 GO
-DROP VIEW IF EXISTS dbo.SummaryView;
+DROP VIEW IF EXISTS dbo.nightly_view;
 GO
 DROP VIEW IF EXISTS dbo.signincount;
 GO

@@ -1,4 +1,4 @@
--- sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_powerbi_views.sql
+-- sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_secondary_views.sql
 --
 PRINT("Create the all_suv_view");
 GO
@@ -147,18 +147,14 @@ SELECT
 FROM dbo.inspectionview i
 GO
 
--- TODO: This view is unusably slow
 -- We avoid using COUNT or AVG as they interfere with materialised views.
-PRINT("Create the SummaryView");
+PRINT("Create nightly_view");
 GO
-CREATE OR ALTER VIEW dbo.SummaryView
+CREATE OR ALTER VIEW dbo.nightly_view
 WITH SCHEMABINDING
 AS
 SELECT
     i.service_date as service_date,
-    i.service_date as Date_Report_Format_,
-    1 AS Delivery_Nights, -- Each night is one night; quite why this is needed is unclear
-    7 AS Delivery_Hours, -- Assumed 7 hours per night; some legacy data uses different values
     MAX(s.volunteer_count) AS Volunteers_Total, -- How many volunteers were on that night
     MAX(s.volunteer_hours) AS Volunteers_Hours, -- Hours that night, based on 7 delivery hours
     MAX(s.volunteer_real_living_wage) AS Real_Living_Wage_, -- Cost of those hours at 8.75 real living wage
@@ -181,21 +177,20 @@ SELECT
     SUM(CASE WHEN i.gender IS NULL THEN 1 ELSE 0 END) AS GenderNull, -- My addition
     -- Counts if found alone
     -- TODO: horrible names, as uninformative
-    SUM(CASE WHEN i.found_alone = 'Yes' THEN 1 ELSE 0 END) AS [Yes],
-    SUM(CASE WHEN i.found_alone = 'No' THEN 1 ELSE 0 END) AS [No],
+    SUM(CASE WHEN i.found_alone = 'Yes' THEN 1 ELSE 0 END) AS found_alone_yes,
+    SUM(CASE WHEN i.found_alone = 'No' THEN 1 ELSE 0 END) AS found_alone_no,
     -- ignoring LIVE_REPORT_DATA_TG_1 as never set
     SUM(CASE WHEN i.found_alone = 'Yes' AND i.gender LIKE 'Male%' THEN 1 ELSE 0 END) AS Male_Alone,
     SUM(CASE WHEN i.found_alone = 'Yes' AND i.gender LIKE 'Female%' THEN 1 ELSE 0 END) AS Female_Alone,
     SUM(CASE WHEN i.found_alone = 'Yes' AND i.gender LIKE 'Trans%' THEN 1 ELSE 0 END) AS TG_Alone,
     -- age_range
-    -- TODO: horrible names for SQL, so should clean up, but needs PowerBI changes too
-    SUM(CASE WHEN i.age_range = 'U16' THEN 1 ELSE 0 END) as Under_16,
-    SUM(CASE WHEN i.age_range = '17-18' THEN 1 ELSE 0 END) as [17-18],
-    SUM(CASE WHEN i.age_range = '19-24' THEN 1 ELSE 0 END) as [19-24],
-    SUM(CASE WHEN i.age_range = '25-34' THEN 1 ELSE 0 END) as [25-34],
-    SUM(CASE WHEN i.age_range = '35-45' THEN 1 ELSE 0 END) as [35-45],
-    SUM(CASE WHEN i.age_range = '46+' THEN 1 ELSE 0 END) as [46],
-    SUM(CASE WHEN i.age_range = '' OR i.age_range is NULL THEN 1 ELSE 0 END) as Age_Unknown,
+    SUM(CASE WHEN i.age_range = 'U16' THEN 1 ELSE 0 END) as age_under_16,
+    SUM(CASE WHEN i.age_range = '17-18' THEN 1 ELSE 0 END) as age_17_18,
+    SUM(CASE WHEN i.age_range = '19-24' THEN 1 ELSE 0 END) as age_19_24,
+    SUM(CASE WHEN i.age_range = '25-34' THEN 1 ELSE 0 END) as age_25_34,
+    SUM(CASE WHEN i.age_range = '35-45' THEN 1 ELSE 0 END) as age_35_45,
+    SUM(CASE WHEN i.age_range = '46+' THEN 1 ELSE 0 END) as age_46_plus,
+    SUM(CASE WHEN i.age_range = '' OR i.age_range is NULL THEN 1 ELSE 0 END) as age_unknown,
     -- residency
     SUM(CASE WHEN i.residency = 'Local to Edinburgh' THEN 1 ELSE 0 END) as Local,
     SUM(CASE WHEN i.residency = 'Student' THEN 1 ELSE 0 END) as Student,
@@ -208,7 +203,6 @@ SELECT
     SUM(CASE WHEN i.where_do_they_study = 'Queen Margaret Uni' THEN 1 ELSE 0 END) as QMU,
     SUM(CASE WHEN i.where_do_they_study = 'Napier Uni' THEN 1 ELSE 0 END) as Napier,
     -- Data expects this, even though no examples
-    0 as EDI_Coll,
     SUM(CASE WHEN i.where_do_they_study IS NOT NULL AND
                   i.where_do_they_study NOT IN ('Edinburgh Uni', 'Heriot Watt Uni', 'Queen Margaret Uni', 'Napier Uni')
         THEN 1 ELSE 0 END) as Academic_Other,
@@ -226,8 +220,7 @@ SELECT
     SUM(CASE WHEN i.referred_by LIKE '%Lothian Buses%' OR i.referred_by LIKE '%Edin Trams%' THEN 1 ELSE 0 END) as Lothian_Buses,
     SUM(CASE WHEN i.referred_by LIKE '%Community Safety%' THEN 1 ELSE 0 END) as Com_Safety,
     SUM(CASE WHEN i.referred_by LIKE '%CCTV%' THEN 1 ELSE 0 END) as CCTV_Control,
-    -- TODO: fix spelling, but need to work it through the Power BI dashboards too.
-    SUM(CASE WHEN i.referred_by LIKE '%Other%' OR i.referred_by LIKE '%Not On List%' THEN 1 ELSE 0 END) as Refferal_Other,
+    SUM(CASE WHEN i.referred_by LIKE '%Other%' OR i.referred_by LIKE '%Not On List%' THEN 1 ELSE 0 END) as Referred_Other,
     -- job_category
     SUM(CASE WHEN i.job_category LIKE '%Alcohol%' THEN 1 ELSE 0 END) as Alcohol,
     SUM(CASE WHEN i.job_category LIKE '%Drugs%' THEN 1 ELSE 0 END) as Drugs,
@@ -244,7 +237,6 @@ SELECT
     SUM(CASE WHEN i.job_category LIKE '%Sexual Assault%' THEN 1 ELSE 0 END) Sexual_Assault,
     SUM(CASE WHEN i.job_category LIKE '%Hate Crime%' THEN 1 ELSE 0 END) Hate_Crime,
     SUM(CASE WHEN i.job_category LIKE '%Domestic%' THEN 1 ELSE 0 END) as Domestic_Abu_Ass,
-    -- TODO: misleading name
     SUM(CASE WHEN i.job_category LIKE '%Other%' THEN 1 ELSE 0 END) as Condition_Other,
     -- job_outcome
     -- Slightly odd name for "Left_on_Own_Taxi", as getting a taxi is another column

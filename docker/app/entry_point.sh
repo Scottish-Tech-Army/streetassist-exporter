@@ -168,7 +168,11 @@ echo "    Secondary views"
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_secondary_views.sql
 
 # Turning views into tables is necessary to ensure that we can combine historic and live data.
-echo "    Power BI source tables"
+echo "    Power BI source tables for inspections"
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_powerbi_tables.sql
+
+# This could be combined with the above, but for debuggability of scripts it turns out better to split them.
+echo "    Power BI source tables for nightly data"
+sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_powerbi_nightly.sql
 
 echo "SUCCESS"

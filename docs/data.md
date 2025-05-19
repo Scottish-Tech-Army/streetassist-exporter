@@ -66,7 +66,12 @@ After the Safety Culture data is exported, the table data is modified, with the 
 
 ## Base data tables and views
 
-Once we have the data from Safety Culture, we need to combine the items and inspections tables.
+Once we have the data from Safety Culture, we need to do two thing
+
+- Create data tables for the various historic data that does not come from Safety Culture.
+
+- Turning the Safety Culture into something more useful by combining the inspection items and inspections tables, and interpreting the `item_id` fields to turn some UUID into a meaningful column name.
+
 
 ### Inspection view
 
@@ -94,13 +99,15 @@ Various sets of historic data (from before Safety Culture) are loaded from csv f
 
 - The table `places` is just directly used, but comes from CSV.
 
-## Parsing subfields into views for Power BI
+## Secondary views
 
-Various views are now created that extract data
+Having built the views, and got the data into a useful format, we go through another stage. For example, the `client_provisions` field (that we extracted from the inspection items table and linked to the inspection in question) is a string of values representing things provided (such as "First Aid" or "Contact Friends") separated by `||`; we want to extract the various valid values to find out what was provided. Hence we parse things further into more detailed views.
 
-- The view `AllDigitalSUF` contains the contents of `inspectionview` appropriately filtered. This map is fairly straightforward, but not totally trivial. For examples, `inspectionview` contains the job outcome (extracted from a field in `inspection_items`) as `job_outcome`, and it is in this view that the outcome values are parsed.
+These views are as follows.
 
-- The view `SummaryView` is a nightly summary. It combines data from `signincount` (to extract the number of volunteers each night) with data from `inspectionview`, and sums the data for all interactions over the night (for example, counting how many interactions had each type of outcome).
+- The view `all_suf_view` contains the contents of `inspectionview` appropriately filtered and restructured. This map is fairly straightforward, but not totally trivial. For examples, `inspectionview` contains the job outcome (extracted from a field in `inspection_items`) as `job_outcome`, and it is in this view that the outcome values are parsed.
+
+- The view `nightly_view` is a nightly summary. It combines data from `signincount` (to extract the number of volunteers each night) with data from `inspectionview`, and sums the data for all interactions over the night (for example, counting how many interactions had each type of outcome).
 
 ## Creating Power BI tables
 
@@ -110,7 +117,9 @@ The Power BI report uses a range of tables. These tables are constructed largely
 
 - The table `WelfareChecks` is a trivial copy of `welfarecheckview` to different column header names, combined with the contents of the uploaded `historic_welfare_checks` table.
 
+- The table `AllDigitalSUF` is constructed from copying `all_suf_view` and combining it with the contents of the uploaded `historic_all_suf` table.
 
+- The table `nightly_data` is constructed by copying `nightly_view` and combining it with the contents of the uploaded `historic_nightly` table.
 
 ## Other tables
 
