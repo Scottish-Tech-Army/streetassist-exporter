@@ -2,6 +2,8 @@
 
 This document lays out the data structure of the various files and tables used by the repo.
 
+*TODO: add a picture with the tables, and some high level overview.*
+
 ## Safety Culture tables
 
 The relevant tables and fields from Safety Culture are as follows, showing the fields in the table, what they mean, and what this tooling uses them for (if anything). Full documentation is provided [on the Safety Culture website](https://developer.safetyculture.com/docs/understanding-the-data). Throughout, we include data with the `archived` field set.

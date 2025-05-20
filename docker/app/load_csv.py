@@ -8,7 +8,7 @@ import subprocess
 import sys
 import yaml
 
-FILELIST = ["historic_all_suf", "places", "historic_welfare_checks"]
+FILELIST = ["places", "historic_welfare_checks", "historic_all_suf", "historic_nightly"]
 STORAGEACCOUNTNAME = os.environ["STORAGEACCOUNTNAME"]
 SERVER = os.environ["SERVER"]
 ADMINUSER = os.environ["ADMINUSER"]
@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s.%(msecs)03d - %(levelname)s - %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
-
 
 def download_csv(csvfile):
     logger.info("Downloading CSV file %s", csvfile)
@@ -90,7 +89,7 @@ for file in FILELIST:
                 raise ValueError(f"Header {header} not in columns")
 
         with open(tsvfile, "w", encoding="utf-8") as tsv:
-            writer = csv.writer(tsv, delimiter="\t", quoting=csv.QUOTE_NONE)
+            writer = csv.writer(tsv, delimiter="\t", quoting=csv.QUOTE_NONE, lineterminator="\n")
             # Write the column names as headers to the TSV file
             writer.writerow(columns)
             for row in reader:

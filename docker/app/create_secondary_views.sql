@@ -156,7 +156,7 @@ AS
 SELECT
     i.service_date as service_date,
     MAX(s.volunteer_count) AS Volunteers_Total, -- How many volunteers were on that night
-    MAX(s.volunteer_hours) AS Volunteers_Hours, -- Hours that night, based on 7 delivery hours
+    MAX(s.volunteer_hours) AS Volunteer_Hours, -- Hours that night, based on 7 delivery hours
     MAX(s.volunteer_real_living_wage) AS Real_Living_Wage_, -- Cost of those hours at 8.75 real living wage
     MAX(s.volunteer_national_living_wage) AS National_LivingWage_, -- Cost of those hours at 7.50 national living wage
     COUNT_BIG(*) AS Patients_Treated, -- Number of inspections identified
@@ -226,8 +226,6 @@ SELECT
     SUM(CASE WHEN i.job_category LIKE '%Drugs%' THEN 1 ELSE 0 END) as Drugs,
     SUM(CASE WHEN i.job_category LIKE '%Phone Charge%' THEN 1 ELSE 0 END) as Phone_Charge,
     SUM(CASE WHEN i.job_category LIKE '%Distressed%' THEN 1 ELSE 0 END) as Distressed,
-    -- TODO: Seems odd that we have both "Lost" and "Lost Friends"
-    SUM(CASE WHEN i.job_category LIKE '%Lost Friends%' THEN 1 ELSE 0 END) as Lost,
     SUM(CASE WHEN i.job_category LIKE '%Lost Friends%' THEN 1 ELSE 0 END) as Lost_Friends,
     SUM(CASE WHEN i.job_category LIKE '%Mental Health%' THEN 1 ELSE 0 END) as Mental_Health,
     SUM(CASE WHEN i.job_category LIKE '%Issues Getting Home%' THEN 1 ELSE 0 END) as Getting_Home,
@@ -239,8 +237,7 @@ SELECT
     SUM(CASE WHEN i.job_category LIKE '%Domestic%' THEN 1 ELSE 0 END) as Domestic_Abu_Ass,
     SUM(CASE WHEN i.job_category LIKE '%Other%' THEN 1 ELSE 0 END) as Condition_Other,
     -- job_outcome
-    -- Slightly odd name for "Left_on_Own_Taxi", as getting a taxi is another column
-    SUM(CASE WHEN i.job_outcome LIKE '%Left on Own Accord%' THEN 1 ELSE 0 END) as Left_on_Own_Taxi,
+    SUM(CASE WHEN i.job_outcome LIKE '%Left on Own Accord%' THEN 1 ELSE 0 END) as Left_on_Own,
     SUM(CASE WHEN i.job_outcome LIKE '%Home by SA%' THEN 1 ELSE 0 END) as Home_by_SA,
     SUM(CASE WHEN i.job_outcome LIKE '%Home by Family%' THEN 1 ELSE 0 END) as Home_by_Family,
     SUM(CASE WHEN i.job_outcome LIKE '%Home by Friend%' THEN 1 ELSE 0 END) as Home_by_Friend,
@@ -251,6 +248,7 @@ SELECT
     SUM(CASE WHEN i.job_outcome LIKE '%Royal ED Hospital%' THEN 1 ELSE 0 END) as REH,
     SUM(CASE WHEN i.job_outcome LIKE '%Police Care%' THEN 1 ELSE 0 END) as Police_Care,
     SUM(CASE WHEN i.job_outcome LIKE '%Taxi home%' THEN 1 ELSE 0 END) as Taxi_Home,
+    SUM(CASE WHEN i.job_outcome LIKE '%Left on Own Accord%' OR i.job_outcome LIKE '%Taxi home%' THEN 1 ELSE 0 END) as Left_on_Own_Taxi, -- Sum of left on own and taxi home; not separated in some early historical data
     SUM(CASE WHEN i.job_outcome LIKE '%Taxi_to_ERI%' OR i.job_outcome LIKE '%Taxi to Edinburgh Royal Inf%' THEN 1 ELSE 0 END) as Taxi_to_ERI,
     SUM(CASE WHEN i.job_outcome LIKE '%Stood Down%' THEN 1 ELSE 0 END) as Stood_Down,
     SUM(CASE WHEN i.job_outcome LIKE '%Arrested%' THEN 1 ELSE 0 END) as Arrested,

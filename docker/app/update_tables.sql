@@ -130,3 +130,122 @@ CREATE TABLE dbo.historic_all_suf (
         police_cancelled_who NVARCHAR(255)
 );
 GO
+
+-- Create the historic nightly table
+PRINT("Create historic_nightly");
+DROP TABLE IF EXISTS dbo.historic_nightly;
+GO
+CREATE TABLE dbo.historic_nightly (
+    service_date NVARCHAR(255), -- service_date
+    Volunteers_Total INT, -- How many volunteers were on that night
+    Volunteer_Hours INT, -- Hours that night, based on 7 delivery hours
+    Patients_Treated INT, -- Number of inspections identified
+    Treatment_Time_Mins_ INT, -- Total time spent on inspections
+    Obs INT,
+    -- gender
+    Male INT,
+    Female INT,
+    TG INT, -- No longer a valid answer
+    TG_1 INT, -- not used but data includes it
+    GenderOther INT, -- My addition
+    GenderNull INT, -- My addition
+    -- Counts if found alone
+    found_alone_yes INT,
+    found_alone_no INT,
+    Male_Alone INT,
+    Female_Alone INT,
+    TG_Alone INT,
+    -- age_range
+    age_under_16 INT,
+    age_17_18 INT,
+    age_19_24 INT,
+    age_25_34 INT,
+    age_35_45 INT,
+    age_46_plus INT,
+    age_unknown INT,
+    -- residency
+    Local INT,
+    Student INT,
+    Tourist_Holiday INT,
+    Visiting INT,
+    Homeless INT,
+    -- where_do_they_study
+    EDI_Uni INT,
+    HW_Uni INT,
+    QMU INT,
+    Napier INT,
+    -- Data expects this INT, even though no examples
+    EDI_College INT,
+    Academic_Other INT,
+    -- referred_by
+    General_Public INT,
+    Street_Pastor INT,
+    Street_Assist INT,
+    Partner_Friend INT,
+    -- This can match either "Police" or "Transport Police" INT, but we bundle together anyway
+    Police_BTP INT,
+    Pub_Club INT,
+    Self_Refer INT,
+    Taxi_Marshall INT,
+    Ambulance INT,
+    Lothian_Buses INT,
+    Com_Safety INT,
+    CCTV_Control INT,
+    Referred_Other INT,
+    -- job_category
+    Alcohol INT,
+    Drugs INT,
+    Phone_Charge INT,
+    Distressed INT,
+    -- TODO: Seems odd that we have both "Lost" and "Lost Friends"
+    Lost INT,
+    Lost_Friends INT,
+    Mental_Health INT,
+    Getting_Home INT,
+    Friendly_Ear INT,
+    First_Aid INT,
+    Assault INT,
+    Sexual_Assault INT,
+    Hate_Crime INT,
+    Domestic_Abu_Ass INT,
+    Condition_Other INT,
+    -- job_outcome
+    Left_on_Own INT,
+    Left_on_Own_Taxi INT, -- Sum of left on own and taxi home; not separated in early data
+    Home_by_SA INT,
+    Home_by_Family INT,
+    Home_by_Friend INT,
+    Phone_Charged INT,
+    Refused_Treat INT,
+    SAS_to_ERI INT,
+    SA_to_ERI INT,
+    REH INT,
+    Police_Care INT,
+    Taxi_Home INT,
+    Taxi_to_ERI INT,
+    Stood_Down INT,
+    Arrested INT,
+    Outcome_Unknown INT, -- Not actually used anywhere, but in the data
+    -- client_provisions
+    First_Aid_2 INT,
+    Phone_Charge_3 INT,
+    Safe_Route_Home INT,
+    Contact_Family INT,
+    Contact_Friend INT,
+    Emotional_Support INT,
+    Advice INT,
+    Shelter INT,
+    Water_Tea INT,
+    Provision_Other INT,
+    -- Fields that never seem to be used, but storing in table; leaving headers as they were
+    LIVE_REPORT_DATA_Condition_Other INT,
+    LIVE_REPORT_DATA_Geographic_Unknown INT,
+    LIVE_REPORT_DATA_Outcome_Unknown INT,
+    LIVE_REPORT_DATA_Cuts INT,
+    LIVE_REPORT_DATA_Bruising INT,
+    LIVE_REPORT_DATA_Blood_Sugar INT,
+    LIVE_REPORT_DATA_First_Aid_ADV_ INT,
+    LIVE_REPORT_DATA_First_Aid_Other INT,
+    LIVE_REPORT_DATA_Stood_Down INT
+);
+GO
