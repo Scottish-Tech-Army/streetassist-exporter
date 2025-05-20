@@ -30,6 +30,12 @@ param registryUrl string = '${containerRegistryName}.azurecr.io'
 @description('Cron schedule for running the job - once per day at midnight')
 param scheduleCron string = '0 0 * * *'
 
+@description('Name of the storage account')
+param storageAccountName string
+
+@description('Blob storage container')
+param blobContainerName string = 'csvdata'
+
 // end
 
 // Azure Key Vault
@@ -78,7 +84,7 @@ resource allowAzureServices 'Microsoft.Sql/servers/firewallRules@2022-02-01-prev
   }
 }
 
-// SQL Database using the Basic tier
+// SQL Database using the Standard tier; we can just about fit into 2GB.
 resource sqlDatabase 'Microsoft.Sql/servers/databases@2021-02-01-preview' = {
   parent: sqlServer
   name: 'sqldb'
@@ -213,10 +219,6 @@ resource containerAppJob 'Microsoft.App/jobs@2024-03-01' = {
           }
           env: [
             {
-              name: 'UAMI_RESOURCE_ID'
-              value: uami.id
-            }
-            {
               name: 'UAMI_CLIENT_ID'
               value: uami.properties.clientId
             }
@@ -236,9 +238,48 @@ resource containerAppJob 'Microsoft.App/jobs@2024-03-01' = {
               name: 'KEYVAULTNAME'
               value: keyVaultName
             }
+            {
+              name: 'STORAGEACCOUNTNAME'
+              value: storageAccountName
+            }
           ]
         }
       ]
     }
+  }
+}
+
+// Storage Account.
+// Hot access and geographic redundancy is overkill, but this is pennies per year so we do not care
+resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
+  name: storageAccountName
+  location: resourceGroup().location
+  sku: {
+    name: 'Standard_GRS'
+  }
+  kind: 'StorageV2'
+  properties: {
+    accessTier: 'Hot'
+  }
+}
+
+// Create a blob container within the Storage Account.
+resource blobContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-02-01' = {
+  name: '${storageAccount.name}/default/${blobContainerName}'
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
+// Assign the "Storage Blob Data Reader" role to the UAMI at the blob container level.
+// Role ID for Storage Blob Data Reader: 2a2b9908-6ea1-4ae2-8e65-a410df84e7d1.
+resource blobDataReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+  // A deterministic GUID is generated based on the container, identity, and role definition.
+  name: guid(uami.id, blobContainer.id, '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1')
+  scope: blobContainer
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1')
+    principalId: uami.properties.principalId
+    principalType: 'ServicePrincipal'
   }
 }

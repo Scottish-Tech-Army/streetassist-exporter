@@ -24,6 +24,7 @@ echo "Entry point running"
 
 if [[ -z "${API_TOKEN:-}" ]]; then
     echo "Environment variable API_TOKEN not set - read from key vault ${KEYVAULTNAME} using ID ${UAMI_CLIENT_ID}"
+
     # For the mad workaround, there is this reference: https://github.com/Azure/azure-cli/issues/22677
     export APPSETTING_WEBSITE_SITE_NAME=DUMMY
     az login --identity --client-id ${UAMI_CLIENT_ID}
@@ -47,45 +48,19 @@ echo "    This run time: ${THISRUN}"
 
 # Do the export
 echo "Run the export tool"
-python load_data.py
+python export_data.py
 
-# Write the timestamp when last run.
+# Write the timestamp when last run, as the export succeeded.
 echo "Write out the time of this run"
-SQLCMD=$(cat write_lasttime.sql | sed "s/THISRUN/${THISRUN}/g")
+SQLCMD="UPDATE dbo.JobTimestamp SET LastRunTime = '${THISRUN}';"
 echo "    SQL command: \"${SQLCMD}\""
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
 
-# Update some values. This is because we do not want to store PII in our temporary tables;
-# we do not need it for any metrics or dashboards.
-echo "Rip out PII"
-SQLCMD="UPDATE dbo.inspection_items
-        SET response = 'REDACTED'
-        WHERE (
+echo "Update tables including removal of PII and setting up of bulk import tables"
+sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i update_tables.sql
 
-            item_id = 'c5fdc387-cd95-4d04-b278-2c482775062c' -- Client name
-            OR item_id = '3c4c2a04-e72f-434a-a61e-efc4f250a5d6' -- SU address
-            OR item_id = '44e7be75-c35b-491c-8326-d35857f4172f' -- Full name
-            OR item_id = '7b62a613-236c-4558-a4f1-eda056125881' -- Job Narrative (often contains PII)
-        ) AND response != 'REDACTED';"
-sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
-
-# Add a service date column, that we can then index; note the 12 hour adjustment.
-echo "Add date column"
-SQLCMD="IF NOT EXISTS (
-            SELECT *
-            FROM sys.columns
-            WHERE Name = N'service_date'
-            AND Object_ID = Object_ID(N'dbo.inspections')
-        )
-        BEGIN
-            ALTER TABLE dbo.inspections
-            ADD service_date DATE;
-        END
-        GO
-        UPDATE dbo.inspections
-        SET service_date = CONVERT(date, DATEADD(hour, -12, conducted_on))
-        WHERE service_date IS NULL AND conducted_on IS NOT NULL;"
-sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
+echo "Bulk import the manually uploaded data."
+python load_csv.py
 
 # Create duplicates of some columns. This is because we want to index them and use them in views.
 # However, the exporter modifies the table definition, causing a failure of the exporter.
@@ -189,7 +164,15 @@ echo "Create views"
 echo "    Main views"
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_views.sql
 
-echo "    Power BI source views"
-sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_powerbi_views.sql
+echo "    Secondary views"
+sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_secondary_views.sql
+
+# Turning views into tables is necessary to ensure that we can combine historic and live data.
+echo "    Power BI source tables for inspections"
+sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_powerbi_tables.sql
+
+# This could be combined with the above, but for debuggability of scripts it turns out better to split them.
+echo "    Power BI source tables for nightly data"
+sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_powerbi_nightly.sql
 
 echo "SUCCESS"
