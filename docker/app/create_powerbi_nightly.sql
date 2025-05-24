@@ -27,7 +27,7 @@ CREATE TABLE dbo.nightly_data (
     GenderOther INT, -- My addition
     GenderNull INT, -- My addition
     -- Counts if found alone
-    -- TODO: horrible names, as uninformative
+    -- TODO: change names and then map in PowerBI
     Yes INT,
     No INT,
     -- ignoring LIVE_REPORT_DATA_TG_1 as never set
@@ -35,10 +35,10 @@ CREATE TABLE dbo.nightly_data (
     Female_Alone INT,
     TG_Alone INT,
     -- age_range
-    -- TODO: horrible names for SQL, so should clean up, but needs PowerBI changes too
+    -- Ugly names for SQL, but this is what PowerBI wants so just going with it for now
     Under_16 INT,
-    [17-18] INT,
-    [19-24] INT,
+    [16-17] INT,
+    [18-24] INT,
     [25-34] INT,
     [35-45] INT,
     [46] INT,
@@ -77,7 +77,7 @@ CREATE TABLE dbo.nightly_data (
     Drugs INT,
     Phone_Charge INT,
     Distressed INT,
-    -- TODO: Seems odd that we have both "Lost" and "Lost Friends"
+    -- "Lost" is in old data, while "Lost Friends" is in both old and new data
     Lost INT,
     Lost_Friends INT,
     Mental_Health INT,
@@ -150,10 +150,9 @@ INSERT INTO dbo.nightly_data
     Female_Alone,
     TG_Alone,
     -- age_range
-    -- TODO: horrible names for SQL, so should clean up, but needs PowerBI changes too
     Under_16,
-    [17-18],
-    [19-24],
+    [16-17],
+    [18-24],
     [25-34],
     [35-45],
     [46],
@@ -256,10 +255,9 @@ SELECT
     Female_Alone AS Female_Alone,
     TG_Alone AS TG_Alone,
     -- age_range
-    -- TODO: horrible names for SQL AS SQL, so should clean up, but needs PowerBI changes too
     age_under_16 AS Under_16,
-    age_17_18 AS [17-18],
-    age_19_24 AS [19-24],
+    age_16_17 AS [16-17],
+    age_18_24 AS [18-24],
     age_25_34 AS [25-34],
     age_35_45 AS [35_45],
     age_46_plus AS [46],
@@ -368,10 +366,9 @@ INSERT INTO dbo.nightly_data
     Female_Alone,
     TG_Alone,
     -- age_range
-    -- TODO: horrible names for SQL, so should clean up, but needs PowerBI changes too
     Under_16,
-    [17-18],
-    [19-24],
+    [16-17],
+    [18-24],
     [25-34],
     [35-45],
     [46],
@@ -477,10 +474,9 @@ SELECT
     Female_Alone AS Female_Alone,
     TG_Alone AS TG_Alone,
     -- age_range
-    -- TODO: horrible names for SQL AS SQL, so should clean up AS up, but needs PowerBI changes too
     age_under_16 AS Under_16,
-    age_17_18 AS [17-18],
-    age_19_24 AS [19-24],
+    age_17_18 AS [16-17], -- squash into more recent age bands
+    age_19_24 AS [18-24], -- squash into more recent age bands
     age_25_34 AS [25-34],
     age_35_45 AS [35_45],
     age_46_plus AS [46],

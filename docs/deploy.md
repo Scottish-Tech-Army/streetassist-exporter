@@ -114,7 +114,7 @@ This must be done before users can actually use the provisioned data.
 
 This process sets yourself up as the Entra managed admin for the SQL Server Database. It only needs to be done once, unless the admin leaves and needs to be replaced.
 
-To do this, find the SQL Server database in the portal.
+- Find the SQL Server instance (not the database) in the portal (look in the resource group), and click on it.
 
 - Configure AAD access, with yourself as the admin as follows
 
@@ -127,6 +127,14 @@ To do this, find the SQL Server database in the portal.
     - Select your own account, and click `Select`
 
     - Click `Save` at the top of the screen, so the change is not immediately forgotten.
+
+- Enable access from your IP address.
+
+    - Click on `Networking` under `Security` to see the networking screen.
+
+    - Click on `Add your client IPv4 address`
+
+    - Click the `SAVE` button
 
 ### Set up users and groups to have read rights to the data
 

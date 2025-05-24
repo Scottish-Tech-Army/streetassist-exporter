@@ -1,4 +1,4 @@
--- sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_views.sql
+-- sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_primary_views.sql
 -- Clear out the views that depend on this one; needed as they have schemabinding (i.e. are indexed)
 PRINT("Drop existing views");
 DROP VIEW IF EXISTS dbo.all_suf_view;
@@ -107,7 +107,7 @@ GROUP BY
 GO
 
 -- Sign in form data
--- TODO: This only goes back to 2022-08, while the inspection data goes back further
+-- This only goes back to 2022-08, while the inspection data goes back further, so we use historic CSV data up until then
 PRINT("Create the sign in view");
 GO
 CREATE OR ALTER VIEW dbo.signinview
