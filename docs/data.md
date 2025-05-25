@@ -1,12 +1,28 @@
 # Data structure
 
-This document lays out the data structure of the various files and tables used by the repo.
+This document lays out the data structure of the various files and tables used by the repo. The basic flow is shown in the diagram below.
 
-*TODO: add a picture with the tables, and some high level overview.*
+![Data structure](data.svg)
 
-## Safety Culture tables
+In broad terms, the data is structured and handled as follows.
 
-The relevant tables and fields from Safety Culture are as follows, showing the fields in the table, what they mean, and what this tooling uses them for (if anything). Full documentation is provided [on the Safety Culture website](https://developer.safetyculture.com/docs/understanding-the-data). Throughout, we include data with the `archived` field set.
+- Data is imported into some base tables, with a mix of live data imported from Safety Culture and Historic data imported from CSV.
+
+- The data from Safety Culture is not of the most useful format, with a single interaction in multiple rows in multiple tables, so some primary views are created that link inspections and inspection items.
+
+- Once these primary views are created, a secondary set of views are created which both parse the data further (breaking out composite fields, such as job outcome), and performing summary counts of all interactions over the same night.
+
+- Finally all of the views and the historic data are assembled into tables formatted for Power BI.
+
+All of this is idempotent; the job setting everything up will drop and recreate tables so that changes are applied immediately, and everything will recover if any or all tables are deleted. The one exception is that the Safety Culture exporter is passed a time of last successful run to speed up the slowest part of the process (though again, dropping all the tables will reset this).
+
+## Base tables
+
+These are the first set of base import tables.
+
+### Safety Culture exported tables
+
+The relevant tables and fields here are as as follows, showing the fields in the table, what they mean, and what this tooling uses them for (if anything). Full documentation is provided [on the Safety Culture website](https://developer.safetyculture.com/docs/understanding-the-data). Throughout, we include data with the `archived` field set.
 
 ### Templates
 
@@ -17,7 +33,7 @@ This table is exported into the database table `templates`. The data was manuall
 | template_id     | Unique ID | Value extracted to allow filtering of inspections |
 | name            | Template name | Figuring out what the template is for |
 
-### Inspections
+#### Inspections
 
 This table is exported into the database table `inspections`. Interesting fields include the following. The types of inspections we care about (identified by the `template_id` field) are those corresponding to "Sign In" (i.e. a volunteer is signing in, necessary so we can count volunteers each night); "Welfare Check" for welfare checks; and a number of variations on "Service User Form" for general interactions.
 
@@ -31,11 +47,11 @@ This table is exported into the database table `inspections`. Interesting fields
 
 Certain fields are added to this table to allow for better indexing and handling of data later. In particular, there is a field `service_date` that is defined by subtracting 12 hours from the `conducted_on` field then converting to a date. This allows interactions on the same night before and after midnight (including signing in of volunteers and interactions with the public) to be connected as the same logical date.
 
-### Inspection items
+#### Inspection items
 
 This table is exported into the database table `inspection_items`. Each item in this table is some part of the filled out inspection form, such as a question or response.
 
-This is post processed to extract the relevant information by selecting on the following.
+This is later processed to extract the relevant information by selecting on the following.
 
 - `audit_id` - links to the inspection.
 
@@ -66,31 +82,6 @@ Interesting fields include the following
 
 After the Safety Culture data is exported, the table data is modified, with the addition of various indices, and the removal of PII.
 
-## Base data tables and views
-
-Once we have the data from Safety Culture, we need to do two thing
-
-- Create data tables for the various historic data that does not come from Safety Culture.
-
-- Turning the Safety Culture into something more useful by combining the inspection items and inspections tables, and interpreting the `item_id` fields to turn some UUID into a meaningful column name.
-
-
-### Inspection view
-
-The view `inspectionview` contains data about all inspections using the various "Service User Form" templates. It is created by joining the `inspections` and `inspection_items` fields, filtering on `template_id`, and then extracting appropriate fields (based largely on `item_id`) to extract all relevant information about an interaction.
-
-### Welfare Checks
-
-The view `welfarecheckview` contains data about all inspections using the "Welfare Check" template. It is created by joining the `inspections` and `inspection_items` fields, filtering on `template_id`, and then extracting appropriate fields to extract all relevant information about a welfare check.
-
-### Sign in view
-
-The views `signinview` and `signincount` are used to track volunteer signins.
-
-- The view `signinview` extracts the names of each volunteer who signed in on a given night, by selecting from `inspections` where the `template_id` matches the "Sign in" template.
-
-- The view `signincount` converts the sign in data into nightly counts. It also performs some useful calculations used later (converting number of volunteers into equivalent costs at different wage rates, and calculating number of hours worked based on 7 hours per shift).
-
 ### Historic data
 
 Various sets of historic data (from before Safety Culture) are loaded from csv files into tables.
@@ -101,9 +92,29 @@ Various sets of historic data (from before Safety Culture) are loaded from csv f
 
 - The table `places` is just directly used, but comes from CSV.
 
+## Primary views
+
+Once we have the data from Safety Culture, we need to turn the Safety Culture into something more useful by combining the inspection items and inspections tables, and interpreting the `item_id` fields to turn some UUID into a meaningful column name.
+
+### Inspection View
+
+The view `inspectionview` contains data about all inspections using the various "Service User Form" templates. It is created by joining the `inspections` and `inspection_items` fields, filtering on `template_id`, and then extracting appropriate fields (based largely on `item_id`) to extract all relevant information about an interaction.
+
+### Welfare Check View
+
+The view `welfarecheckview` contains data about all inspections using the "Welfare Check" template. It is created by joining the `inspections` and `inspection_items` fields, filtering on `template_id`, and then extracting appropriate fields to extract all relevant information about a welfare check.
+
+### Sign in Views
+
+The views `signinview` and `signincount` are used to track volunteer signins.
+
+- The view `signinview` extracts the names of each volunteer who signed in on a given night, by selecting from `inspections` where the `template_id` matches the "Sign in" template.
+
+- The view `signincount` converts the sign in data into nightly counts. It also performs some useful calculations used later (converting number of volunteers into equivalent costs at different wage rates, and calculating number of hours worked based on 7 hours per shift).
+
 ## Secondary views
 
-Having built the views, and got the data into a useful format, we go through another stage. For example, the `client_provisions` field (that we extracted from the inspection items table and linked to the inspection in question) is a string of values representing things provided (such as "First Aid" or "Contact Friends") separated by `||`; we want to extract the various valid values to find out what was provided. Hence we parse things further into more detailed views.
+Having built the primary views, and got the data into a useful format, we go through another stage. For example, the `client_provisions` field (that we extracted from the inspection items table and linked to the inspection in question) is a string of values representing things provided (such as "First Aid" or "Contact Friends") separated by `||`; we want to extract the various valid values to find out what was provided. Hence we parse things further into more detailed views.
 
 These views are as follows.
 
@@ -122,11 +133,6 @@ The Power BI report uses a range of tables. These tables are constructed largely
 - The table `AllDigitalSUF` is constructed from copying `all_suf_view` and combining it with the contents of the uploaded `historic_all_suf` table.
 
 - The table `nightly_data` is constructed by copying `nightly_view` and combining it with the contents of the uploaded `historic_nightly` table.
-
-## Other tables
-
-*TODO: There are some other tables required by Power BI that do not exist in the Safety Culture data; to be provided.*
-
 
 ## Other tables
 
