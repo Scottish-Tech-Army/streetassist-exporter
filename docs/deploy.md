@@ -12,7 +12,6 @@ Follow the following steps.
 
 - Set up a config file. *TODO: document with an example.*
 
-
     Before running any of the bash commands, you should source this config file.
 
     ~~~bash
@@ -79,9 +78,33 @@ This process needs to be performed whenever your access token expires, and invol
 
 ### Uploading data files
 
-*TODO: To be provided - just document the portal steps, for the files.*
+*TODO: document where these files are currently stored.*
 
-- `places.csv`
+Upload the various CSV files containing historical data.
+
+- Go to the [Azure Portal](https://portal.azure.com), and log in with the correct identity.
+
+- Select the resource group containing the exporter (you can find a list of resource groups in the menu). This will show a list of resources in the RG.
+
+- Click on the storage account.
+
+- Expand the `Data Storage` option on the left, and click on `Containers`.
+
+- There should be one container in the list named `csvdata`. Click on it.
+
+- Click on `Upload` at the top of the screen.
+
+- Select the CSV files to upload and click the `Upload` button. The full list of files is as follows.
+
+    - `places.csv`
+
+    - `historical_nightly.csv`
+
+    - `historic_all_suf.csv`
+
+    - `historic_welfare_checks.csv`
+
+Once the files are uploaded, you can continue.
 
 ## Set up AAD permissions for SQL Server
 
@@ -91,7 +114,7 @@ This must be done before users can actually use the provisioned data.
 
 This process sets yourself up as the Entra managed admin for the SQL Server Database. It only needs to be done once, unless the admin leaves and needs to be replaced.
 
-To do this, find the SQL Server database in the portal.
+- Find the SQL Server instance (not the database) in the portal (look in the resource group), and click on it.
 
 - Configure AAD access, with yourself as the admin as follows
 
@@ -104,6 +127,14 @@ To do this, find the SQL Server database in the portal.
     - Select your own account, and click `Select`
 
     - Click `Save` at the top of the screen, so the change is not immediately forgotten.
+
+- Enable access from your IP address.
+
+    - Click on `Networking` under `Security` to see the networking screen.
+
+    - Click on `Add your client IPv4 address`
+
+    - Click the `SAVE` button
 
 ### Set up users and groups to have read rights to the data
 

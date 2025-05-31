@@ -136,14 +136,7 @@ SELECT
     i.police_involved as was_police_involved,
     i.police_requested as were_police_called,
     i.police_requested_how as how_requested_police,
-    -- TODO: what is this?
-    -- i.police_requested_how as how_requested_police_other,
     i.police_requested_who as who_requested_police
-    -- TODO: what is this?
-    -- i.police_requested_who as who_requested_police_other
-    -- TODO: Does not appear to exist in current data, but might be in old data
-    -- MAX(i.police_cancelled) as police_cancelled,
-    -- MAX(i.police_cancelled_who) as who_cancelled_police
 FROM dbo.inspectionview i
 GO
 
@@ -165,7 +158,6 @@ SELECT
     SUM(i.total_job_minutes) / COUNT_BIG(i.total_job_minutes) AS Time_Mins_per_Patient, -- Inspection time per inspection
     CAST(COUNT_BIG(*) * 850 - MAX(s.volunteer_real_living_wage) AS DECIMAL(10,2)) AS CB_Overall, -- Cost Benefit - SROI minus real living wage cost
     CAST((COUNT_BIG(*) * 850 - MAX(s.volunteer_real_living_wage)) / MAX(s.volunteer_count) AS DECIMAL(10,2)) AS CB_per_volunteer, -- Cost Benefit per volunteer
-    -- TODO: unmapped fields
     -- Observations performed
     SUM(CASE WHEN i.observations = 'Yes' THEN 1 ELSE 0 END) AS Obs,
     -- gender
@@ -176,7 +168,6 @@ SELECT
     SUM(CASE WHEN i.gender IS NOT NULL AND gender NOT IN ('Male', 'Female', 'Trans') THEN 1 ELSE 0 END) AS GenderOther, -- My addition
     SUM(CASE WHEN i.gender IS NULL THEN 1 ELSE 0 END) AS GenderNull, -- My addition
     -- Counts if found alone
-    -- TODO: horrible names, as uninformative
     SUM(CASE WHEN i.found_alone = 'Yes' THEN 1 ELSE 0 END) AS found_alone_yes,
     SUM(CASE WHEN i.found_alone = 'No' THEN 1 ELSE 0 END) AS found_alone_no,
     -- ignoring LIVE_REPORT_DATA_TG_1 as never set
@@ -185,8 +176,8 @@ SELECT
     SUM(CASE WHEN i.found_alone = 'Yes' AND i.gender LIKE 'Trans%' THEN 1 ELSE 0 END) AS TG_Alone,
     -- age_range
     SUM(CASE WHEN i.age_range = 'U16' THEN 1 ELSE 0 END) as age_under_16,
-    SUM(CASE WHEN i.age_range = '17-18' THEN 1 ELSE 0 END) as age_17_18,
-    SUM(CASE WHEN i.age_range = '19-24' THEN 1 ELSE 0 END) as age_19_24,
+    SUM(CASE WHEN i.age_range = '16-17' OR i.age_range = '17-18' THEN 1 ELSE 0 END) as age_16_17, -- older data has 17-18, newer data has 16-17; just munge together
+    SUM(CASE WHEN i.age_range = '18-24' OR i.age_range = '19-24' THEN 1 ELSE 0 END) as age_18_24, -- older data has 19-24, newer data has 18-24; just munge together
     SUM(CASE WHEN i.age_range = '25-34' THEN 1 ELSE 0 END) as age_25_34,
     SUM(CASE WHEN i.age_range = '35-45' THEN 1 ELSE 0 END) as age_35_45,
     SUM(CASE WHEN i.age_range = '46+' THEN 1 ELSE 0 END) as age_46_plus,

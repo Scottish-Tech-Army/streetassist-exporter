@@ -157,8 +157,8 @@ CREATE TABLE dbo.historic_nightly (
     TG_Alone INT,
     -- age_range
     age_under_16 INT,
-    age_17_18 INT,
-    age_19_24 INT,
+    age_17_18 INT, -- older data had this as 17-18; we will convert to 16-17
+    age_19_24 INT, -- older data had this as 19-24; we will convert to 18-24
     age_25_34 INT,
     age_35_45 INT,
     age_46_plus INT,
@@ -197,7 +197,6 @@ CREATE TABLE dbo.historic_nightly (
     Drugs INT,
     Phone_Charge INT,
     Distressed INT,
-    -- TODO: Seems odd that we have both "Lost" and "Lost Friends"
     Lost INT,
     Lost_Friends INT,
     Mental_Health INT,

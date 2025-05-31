@@ -27,8 +27,8 @@ param containerImage string = '${containerRegistryName}.azurecr.io/exporter:late
 @description('Registry URL')
 param registryUrl string = '${containerRegistryName}.azurecr.io'
 
-@description('Cron schedule for running the job - once per day at midnight')
-param scheduleCron string = '0 0 * * *'
+@description('Cron schedule for running the job - once per day at 6am')
+param scheduleCron string = '0 6 * * *'
 
 @description('Name of the storage account')
 param storageAccountName string
@@ -199,7 +199,7 @@ resource containerAppJob 'Microsoft.App/jobs@2024-03-01' = {
           identity: uami.id
         }
       ]
-      replicaTimeout: 28800
+      replicaTimeout: 28800 // 8 hours
       triggerType: 'Schedule'
       scheduleTriggerConfig: {
         cronExpression: scheduleCron

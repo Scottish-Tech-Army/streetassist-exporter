@@ -56,8 +56,8 @@ SQLCMD="UPDATE dbo.JobTimestamp SET LastRunTime = '${THISRUN}';"
 echo "    SQL command: \"${SQLCMD}\""
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
 
-echo "Update tables including removal of PII and setting up of bulk import tables"
-sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i update_tables.sql
+echo "Update base tables including removal of PII and setting up of bulk import tables"
+sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i base_tables.sql
 
 echo "Bulk import the manually uploaded data."
 python load_csv.py
@@ -161,18 +161,18 @@ sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
 
 # Create the views.
 echo "Create views"
-echo "    Main views"
-sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_views.sql
+echo "    Primary views (create_primary_views.sql)"
+sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_primary_views.sql
 
-echo "    Secondary views"
+echo "    Secondary views (create_secondary_views.sql)"
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_secondary_views.sql
 
 # Turning views into tables is necessary to ensure that we can combine historic and live data.
-echo "    Power BI source tables for inspections"
+echo "    Power BI source tables for inspections (create_powerbi_tables.sql)"
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_powerbi_tables.sql
 
-# This could be combined with the above, but for debuggability of scripts it turns out better to split them.
-echo "    Power BI source tables for nightly data"
+# This could be combined with the above, but they are pretty large so clearer to split them.
+echo "    Power BI source tables for nightly data (create_powerbi_nightly.sql)"
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_powerbi_nightly.sql
 
 echo "SUCCESS"
