@@ -175,4 +175,12 @@ sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_powerbi
 echo "    Power BI source tables for nightly data (create_powerbi_nightly.sql)"
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_powerbi_nightly.sql
 
+# Write the timestamp when the job was completed, used purely for comfort (and to show it all worked OK).
+echo "Write out the time of completion"
+export COMPLETION=$(date -u +"%Y-%m-%d %H:%M:%S")
+echo "    Completion time: ${COMPLETION}"
+SQLCMD="UPDATE dbo.CompletionTimestamp SET LastCompletion = '${COMPLETION}';"
+echo "    SQL command: \"${SQLCMD}\""
+sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
+
 echo "SUCCESS"

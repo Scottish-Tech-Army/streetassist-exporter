@@ -1,10 +1,36 @@
 # Deployment and management
 
+This document describes how to deploy things. It covers.
+
+1. How to [create a new deployment](#initial-deployment-creation), which is only needed if you want to create a new deployment or the original deployment gets broken somehow.
+
+2. Setting up [Azure Active Directory permissions for SQL Server](#setting-up-aad-permissions-for-sql-server), which is needed to allow users to access the data in the SQL database.
+
+3. Updating the [Power BI reports](#updating-power-bi-reports), which is needed to ensure that the Power BI reports are using the nightly data.
+
+*Generally you never have to do this - there is a deployment. You might need to do it if somebody deletes the deployment, or you need to update or repair it.*
+
 ## Initial deployment creation
+
+This section describes how to create a new deployment.
 
 ### Prerequisites
 
-*TODO: Azure subscription, access key to Safety Culture*
+Before you can initially create a deployment, you need the following.
+
+- A PC to run the tooling on. The tooling was tested using Linux, but anything running bash should be fine, including a Mac or WSL on Windows. This PC must have various utilities installed . These include the following.
+
+    - [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)
+
+    - [Docker](https://docs.docker.com/engine/install/)
+
+    - Various scripts contained in this repo, which must be checked out.
+
+- An Azure subscription. This will contain the various components that get deployed.
+
+- Power BI running on a Windows PC. Sorry - if you want to use Power BI, you need to use Windows.
+
+- An access key for Safety Culture. You can create this by logging into the [Safety Culture website](https://safetyculture.com).
 
 ### Setting up resources in Azure
 
@@ -78,21 +104,21 @@ This process needs to be performed whenever your access token expires, and invol
 
 ### Uploading data files
 
-*TODO: document where these files are currently stored.*
-
 Upload the various CSV files containing historical data.
+
+- Download the files from [the Sharepoint site](https://streetassistcouk.sharepoint.com/:f:/s/ITOperations/EmH4V3yQxztBn7GHdZxbzV0B3Pd40-YvlT_MJ4K_9rzOjA?e=E2TbD4).
 
 - Go to the [Azure Portal](https://portal.azure.com), and log in with the correct identity.
 
 - Select the resource group containing the exporter (you can find a list of resource groups in the menu). This will show a list of resources in the RG.
 
-- Click on the storage account.
+- Find the upload button for the storage account.
 
-- Expand the `Data Storage` option on the left, and click on `Containers`.
+    - Expand the `Data Storage` option on the left, and click on `Containers`.
 
-- There should be one container in the list named `csvdata`. Click on it.
+    - There should be one container in the list named `csvdata`. Click on it.
 
-- Click on `Upload` at the top of the screen.
+    - There should be an `Upload` button at the top of the screen.
 
 - Select the CSV files to upload and click the `Upload` button. The full list of files is as follows.
 
@@ -106,7 +132,7 @@ Upload the various CSV files containing historical data.
 
 Once the files are uploaded, you can continue.
 
-## Set up AAD permissions for SQL Server
+## Setting up AAD permissions for SQL Server
 
 This must be done before users can actually use the provisioned data.
 
@@ -161,3 +187,27 @@ This must be done to allow individual users to run Power BI reports, and involve
     CREATE USER [SecurityGroupName] FROM EXTERNAL PROVIDER;
     ALTER ROLE db_datareader ADD MEMBER [SecurityGroupName];
     ```
+
+## Updating Power BI reports
+
+This section describes how to update the Power BI reports to use the latest data. The process is as follows.
+
+- Download the `pbix` file.
+
+- Open the `pbix` file in Power BI Desktop.
+
+- Click on `Transform data` to open the Power Query editor, then click on `Data source settings` in the top menu.
+
+    - Update the SQL data source to have the correct server name (from the SQL server instance created above).
+
+- Save the `pbix` file, and upload it to the Power BI service.
+
+- In the Power BI service, go to the dataset settings for the report.
+
+    - Click on `Data source credentials` and ensure that the credentials are set to use the `Microsoft Entra ID` authentication method.
+
+    - Click on `Scheduled refresh` and ensure that the refresh is set to run daily at 08:00.
+
+    - Click on `Apply` to save the changes.
+
+    - In the Power BI service, go to the report and click on `Refresh now` to ensure that the report is using the latest data.
