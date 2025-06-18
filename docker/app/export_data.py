@@ -31,9 +31,9 @@ def set_config(api_token, connection_string, last_run):
     config['access_token'] = api_token
     config['export']['incremental'] = True
     config['export']['inspection']['archived'] = "both"
-    config['export']['tables'] = ['inspections', 'inspection_items', 'templates']
+    config['export']['tables'] = ['inspections', 'inspection_items', 'templates', 'actions']
 
-    # Really a perf thing; might not be required.
+    # Only use changes after last successful run; initial runs take multiple hours, while updates take a minute or so.
     config['export']['modified_after'] = last_run
 
     # Now the SQL configuration
@@ -48,22 +48,26 @@ def export_data():
     logger.info("Download all the data")
     result = subprocess.run(f"{COMMAND} sql", shell=True, check=True, text=True)
 
-# Do the things
-logger.info("Get started")
-api_token = os.environ["API_TOKEN"]  # Raises KeyError if not set
-connection_string = os.environ["CONNECTION"]  # Raises KeyError if not set
-last_run_raw = os.environ["LASTRUN"]  # Raises KeyError if not set
-# LASTRUN is something like "2025-01-01 12:34:56" - which cannot be parsed by the exporter.
-# Convert to the correct format.
-logger.info("Last run time (raw): \"%s\"", last_run_raw)
-parts = last_run_raw.split(" ")
-if len(parts) == 2:
-    date, time = parts
-else:
-    raise ValueError("Expected exactly one space in last_run_raw")
-date, time = last_run_raw.split(" ")
-last_run = f"{date}T{time}Z"
-logger.info("Last run time (reformatted): \"%s\"", last_run)
+def main():
+    # Do the things
+    logger.info("Get started")
+    api_token = os.environ["API_TOKEN"]  # Raises KeyError if not set
+    connection_string = os.environ["CONNECTION"]  # Raises KeyError if not set
+    last_run_raw = os.environ["LASTRUN"]  # Raises KeyError if not set
+    # LASTRUN is something like "2025-01-01 12:34:56" - which cannot be parsed by the exporter.
+    # Convert to the correct format.
+    logger.info("Last run time (raw): \"%s\"", last_run_raw)
+    parts = last_run_raw.split(" ")
+    if len(parts) == 2:
+        date, time = parts
+    else:
+        raise ValueError("Expected exactly one space in last_run_raw")
+    date, time = last_run_raw.split(" ")
+    last_run = f"{date}T{time}Z"
+    logger.info("Last run time (reformatted): \"%s\"", last_run)
 
-set_config(api_token, connection_string, last_run)
-export_data()
+    set_config(api_token, connection_string, last_run)
+    export_data()
+
+if __name__ == "__main__":
+    main()
