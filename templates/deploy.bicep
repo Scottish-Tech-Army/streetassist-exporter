@@ -263,9 +263,20 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   }
 }
 
+// Create a Blob Service within the Storage Account, needed for versioning.
+// If you don't do this, the blob service is created with default settings.
+resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2021-09-01' = {
+  name: 'default'
+  parent: storageAccount
+  properties: {
+    isVersioningEnabled: true
+  }
+}
+
 // Create a blob container within the Storage Account.
 resource blobContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-02-01' = {
-  name: '${storageAccount.name}/default/${blobContainerName}'
+  name: blobContainerName
+  parent: blobService
   properties: {
     publicAccess: 'None'
   }
