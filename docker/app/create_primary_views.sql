@@ -91,13 +91,14 @@ SELECT
     i.service_date as service_date,
     MAX(CASE WHEN ii.item_id = '7bbfd9b0-9e8b-4571-84fe-b0abc84bf7b1' AND ii.type = 'question' THEN ii.response END) AS gender,
     MAX(CASE WHEN ii.item_id = 'b11a1d3b-cf78-4ef7-b08e-cf54a2e4b41c' AND ii.type = 'list' THEN ii.response END) AS location,
-    MAX(CASE WHEN ii.item_id = '30b9229d-557b-468c-8a0c-141385a46946' AND ii.type = 'list' THEN ii.response END) AS check_type
+    MAX(CASE WHEN ii.item_id = '30b9229d-557b-468c-8a0c-141385a46946' AND ii.type = 'list' THEN ii.response END) AS check_type,
+    MAX(CASE WHEN ii.item_id = 'f3245d46-ea77-11e1-aff1-0800200c9a66' AND ii.type = 'textsingle' THEN ii.response END) AS form_id
 FROM dbo.inspections i
 JOIN dbo.inspection_items ii
   ON i.audit_id2 = ii.audit_id
 WHERE
     i.template_id2 = 'template_b68037b3adca46d894a2e155032720f7' AND
-    (ii.type = "list" OR ii.type = "question")
+    (ii.type = "list" OR ii.type = "question" OR ii.type = "textsingle")
 GROUP BY
     i.audit_id2,
     i.template_id2,
