@@ -175,6 +175,10 @@ sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_powerbi
 echo "    Power BI source tables for nightly data (create_powerbi_nightly.sql)"
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_powerbi_nightly.sql
 
+# Again, could be combined but split for clarity. Data used to issue warnings in Power BI.
+echo "    Power BI source tables for warning data (create_powerbi_warnings.sql)"
+sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_powerbi_warnings.sql
+
 # Write the timestamp when the job was completed, used purely for comfort (and to show it all worked OK).
 echo "Write out the time of completion"
 export COMPLETION=$(date -u +"%Y-%m-%d %H:%M:%S")

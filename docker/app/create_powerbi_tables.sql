@@ -8,7 +8,8 @@ CREATE TABLE dbo.WelfareChecks (
     Conducted DATE NOT NULL, -- service_date
     Gender NVARCHAR(255),
     Location NVARCHAR(255),
-    Type NVARCHAR(255)
+    Type NVARCHAR(255),
+    form_id NVARCHAR(255)
 );
 GO
 
@@ -26,13 +27,14 @@ GO
 
 -- Copy in the data from the view, but not if there's already a record in the table.
 PRINT("Insert WelfareChecks from view");
-INSERT INTO dbo.WelfareChecks (auditID, Conducted, Gender, Location, Type)
+INSERT INTO dbo.WelfareChecks (auditID, Conducted, Gender, Location, Type, form_id)
 SELECT
     v.audit_id,
     v.service_date,
     v.gender,
     v.location,
-    v.check_type
+    v.check_type,
+    v.form_id
 FROM dbo.welfarecheckview v
 WHERE NOT EXISTS (
     SELECT 1
