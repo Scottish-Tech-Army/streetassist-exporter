@@ -39,10 +39,27 @@ CREATE TABLE dbo.places (
         name_google NVARCHAR(255),
         address NVARCHAR(255),
         latitude DECIMAL(12,8), -- latitude
-        longitude DECIMAL(12,8), -- longitude
-        place_id NVARCHAR(255),
-        icon NVARCHAR(255),
-        icon_hex NVARCHAR(255)
+        longitude DECIMAL(12,8) -- longitude
+);
+GO
+
+-- Create the valid_locations table - i.e. what SafetyCulture allows for new inspections
+PRINT("Create the valid_locations table");
+GO
+DROP TABLE IF EXISTS dbo.valid_locations;
+GO
+CREATE TABLE dbo.valid_locations (
+        name NVARCHAR(255) NOT NULL
+);
+GO
+
+-- Create the place_synonyms table - values that we map in the data if for example the spelling has changed
+PRINT("Create the place_synonyms table");
+DROP TABLE IF EXISTS dbo.place_synonyms;
+GO
+CREATE TABLE dbo.place_synonyms (
+        name NVARCHAR(255) NOT NULL,
+        synonym NVARCHAR(255) NOT NULL
 );
 GO
 
@@ -248,3 +265,4 @@ CREATE TABLE dbo.historic_nightly (
     LIVE_REPORT_DATA_Stood_Down INT
 );
 GO
+

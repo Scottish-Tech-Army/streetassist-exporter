@@ -365,3 +365,22 @@ SELECT
 FROM dbo.all_suf_view
 WHERE servicedelivery_date >= '2024-01-01';
 GO
+
+-- Replace locations which are just synonyms in both AllDigitalSUF and WelfareChecks
+PRINT("Apply location synonyms to AllDigitalSUF");
+GO
+UPDATE A
+  SET A.venue_name = S.name
+FROM   dbo.AllDigitalSUF AS A
+  JOIN   place_synonyms   AS S
+    ON   A.venue_name = S.synonym;
+GO
+
+PRINT("Apply location synonyms to WelfareChecks");
+GO
+UPDATE W
+  SET W.Location = S.name
+FROM dbo.WelfareChecks AS W
+  JOIN place_synonyms   AS S
+    ON W.Location = S.synonym;
+GO

@@ -130,6 +130,8 @@ Upload the various CSV files containing historical data.
 
     - `historic_welfare_checks.csv`
 
+    - `place_synonyms.csv`
+
 Once the files are uploaded, you can continue.
 
 ## Setting up AAD permissions for SQL Server

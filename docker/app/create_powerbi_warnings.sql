@@ -3,9 +3,9 @@
 -- Create a table of anomalies
 PRINT("Create Locations not in Places table - locations that are in inspections but not in the places table");
 GO
-DROP TABLE IF EXISTS dbo.LocationsNotInPlaces;
+DROP TABLE IF EXISTS dbo.WarningLocationsNotInPlaces;
 GO
-CREATE TABLE dbo.LocationsNotInPlaces (
+CREATE TABLE dbo.WarningLocationsNotInPlaces (
     audit_id NVARCHAR(255),
     service_date DATE,
     location NVARCHAR(255),
@@ -16,7 +16,7 @@ GO
 
 PRINT("Copy anomalous digital SUF data into tables");
 GO
-INSERT INTO dbo.LocationsNotInPlaces
+INSERT INTO dbo.WarningLocationsNotInPlaces
 (
     audit_id,
     service_date,
@@ -37,7 +37,7 @@ GO
 
 PRINT("Copy anomalous Welfare Check data into tables");
 GO
-INSERT INTO dbo.LocationsNotInPlaces
+INSERT INTO dbo.WarningLocationsNotInPlaces
 (
     audit_id,
     service_date,
@@ -53,5 +53,25 @@ SELECT
     'WelfareCheck' AS type
 FROM [dbo].[WelfareChecks] i
 LEFT JOIN places p ON i.location = p.name
+WHERE p.name IS NULL;
+GO
+
+-- Now create a table showing all locations that are in the valid_locations table not the places table
+PRINT("Create Valid Locations not in Places table - valid locations that are in valid_locations but not in the places table");
+GO
+DROP TABLE IF EXISTS dbo.WarningValidLocationsNotInPlaces;
+GO
+CREATE TABLE dbo.WarningValidLocationsNotInPlaces (
+    name NVARCHAR(255) NOT NULL PRIMARY KEY
+);
+GO
+INSERT INTO dbo.WarningValidLocationsNotInPlaces
+(
+    name
+)
+SELECT
+    vl.name
+FROM [dbo].[valid_locations] vl
+LEFT JOIN places p ON vl.name = p.name
 WHERE p.name IS NULL;
 GO

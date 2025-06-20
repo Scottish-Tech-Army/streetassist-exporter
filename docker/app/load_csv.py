@@ -4,11 +4,12 @@ import csv
 import logging
 import os
 import re
+import requests
 import subprocess
 import sys
 import yaml
 
-FILELIST = ["places", "historic_welfare_checks", "historic_all_suf", "historic_nightly"]
+FILELIST = ["places", "historic_welfare_checks", "historic_all_suf", "historic_nightly", "valid_locations", "place_synonyms"]
 STORAGEACCOUNTNAME = os.environ["STORAGEACCOUNTNAME"]
 SERVER = os.environ["SERVER"]
 ADMINUSER = os.environ["ADMINUSER"]
@@ -54,58 +55,99 @@ def read_format(file):
 
     return columns
 
-for file in FILELIST:
-    logger.info("Uploading file %s", file)
+def get_valid_locations(api_token):
+    # Valid locations are in the SafetyCulture data.
+    logger.info("Extracting valid locations")
+    RESPONSESET = "responseset_53d4a29d5525468a991eabe5aa71d2cd"
+    url = f"https://api.safetyculture.io/response_sets/{RESPONSESET}"
+    headers = {
+        "accept": "application/json",
+        "authorization": f"Bearer {api_token}"
+    }
+    response = requests.get(url, headers=headers)
+    if not response.ok:
+        logger.error("Failed to fetch valid locations: %s %s", response.status_code, response.text)
+        response.raise_for_status()
+    data = response.json()
 
-    csvfile = f"{file}.csv"
-    tsvfile = f"/tmp/{file}.tsv"
+    # Parse the data. We deliberately fail if the structure is not as expected.
+    responses = data['responses']
+    names = []
+    for response in responses:
+        names.append(response['label'])
 
-    download_csv(csvfile)
+    # Write the names to a CSV file.
+    csvfile = "/tmp/valid_locations.csv"
+    logger.info("Writing valid locations to %s", csvfile)
+    with open(csvfile, "w", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(['name'])
+        for name in names:
+            writer.writerow([name])
 
-    columns = read_format(file)
+def main():
+    logger.info("Starting CSV download and upload process")
+    api_token = os.environ["API_TOKEN"]  # Raises KeyError if not set
 
-    # Read the CSV file, and convert it to TSV, removing any quotes and BOM characters. We store the header row in a list.
-    logger.info("Converting CSV to TSV for %s", file)
-    with open(f"/tmp/{csvfile}", "r", encoding="utf-8-sig") as f:
-        reader = csv.reader(f)
-        headers = next(reader)
-        # Remove BOM and quotes from headers
-        headers = [h.lower().replace('"', '').replace('\ufeff', '') for h in headers]
+    for file in FILELIST:
+        logger.info("Uploading file %s", file)
 
-        # Check that there are no values in headers that are not in columns
-        for header in headers:
-            if header not in columns:
-                logger.error("Header %s not in columns %s", header, columns)
-                raise ValueError(f"Header {header} not in columns")
+        csvfile = f"{file}.csv"
+        tsvfile = f"/tmp/{file}.tsv"
 
-        # Figure out the ordering - we need to create a mapping for each column in order where it comes from
-        # (or if it is not present, that it is missing and should be NULL)
-        column_map = {}
-        for i, header in enumerate(headers):
-            if header in columns:
-                column_map[header] = i
-            else:
-                logger.error("Header %s not in columns %s", header, columns)
-                raise ValueError(f"Header {header} not in columns")
+        if file == "valid_locations":
+            # Special case - extract this data
+            get_valid_locations(api_token)
+        else:
+            download_csv(csvfile)
 
-        with open(tsvfile, "w", encoding="utf-8") as tsv:
-            writer = csv.writer(tsv, delimiter="\t", quoting=csv.QUOTE_NONE, lineterminator="\n")
-            # Write the column names as headers to the TSV file
-            writer.writerow(columns)
-            for row in reader:
-                # Remove BOM and quotes from each cell in the row
-                clean_row = []
-                for cell in row:
-                    # Remove BOM, and CRs and LFs
-                    cell = cell.replace('\ufeff', '').replace("\r", "").replace("\n", "")
-                    # Truncate decimals if matches pattern: optional -, 1-2 digits, ., >8 decimals
-                    match = re.match(r'^-?\d{1,2}\.(\d{9,})$', cell)
-                    if match:
-                        int_part, dec_part = cell.split('.')
-                        cell = f"{int_part}.{dec_part[:8]}"
-                    clean_row.append(cell)
-                # Reorder the row based on the column map, putting in None for missing columns
-                reordered_row = [clean_row[column_map[col]] if col in column_map else None for col in columns]
-                writer.writerow(reordered_row)
+        columns = read_format(file)
 
-    upload_tsv(file, tsvfile)
+        # Read the CSV file, and convert it to TSV, removing any quotes and BOM characters. We store the header row in a list.
+        logger.info("Converting CSV to TSV for %s", file)
+        with open(f"/tmp/{csvfile}", "r", encoding="utf-8-sig") as f:
+            reader = csv.reader(f)
+            headers = next(reader)
+            # Remove BOM and quotes from headers
+            headers = [h.lower().replace('"', '').replace('\ufeff', '') for h in headers]
+
+            # Check that there are no values in headers that are not in columns
+            for header in headers:
+                if header not in columns:
+                    logger.error("Header %s not in columns %s", header, columns)
+                    raise ValueError(f"Header {header} not in columns")
+
+            # Figure out the ordering - we need to create a mapping for each column in order where it comes from
+            # (or if it is not present, that it is missing and should be NULL)
+            column_map = {}
+            for i, header in enumerate(headers):
+                if header in columns:
+                    column_map[header] = i
+                else:
+                    logger.error("Header %s not in columns %s", header, columns)
+                    raise ValueError(f"Header {header} not in columns")
+
+            with open(tsvfile, "w", encoding="utf-8") as tsv:
+                writer = csv.writer(tsv, delimiter="\t", quoting=csv.QUOTE_NONE, lineterminator="\n")
+                # Write the column names as headers to the TSV file
+                writer.writerow(columns)
+                for row in reader:
+                    # Remove BOM and quotes from each cell in the row
+                    clean_row = []
+                    for cell in row:
+                        # Remove BOM, and CRs and LFs
+                        cell = cell.replace('\ufeff', '').replace("\r", "").replace("\n", "")
+                        # Truncate decimals if matches pattern: optional -, 1-2 digits, ., >8 decimals
+                        match = re.match(r'^-?\d{1,2}\.(\d{9,})$', cell)
+                        if match:
+                            int_part, dec_part = cell.split('.')
+                            cell = f"{int_part}.{dec_part[:8]}"
+                        clean_row.append(cell)
+                    # Reorder the row based on the column map, putting in None for missing columns
+                    reordered_row = [clean_row[column_map[col]] if col in column_map else None for col in columns]
+                    writer.writerow(reordered_row)
+
+        upload_tsv(file, tsvfile)
+
+if __name__ == "__main__":
+    main()
