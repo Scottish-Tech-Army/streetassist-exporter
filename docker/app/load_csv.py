@@ -9,7 +9,7 @@ import subprocess
 import sys
 import yaml
 
-FILELIST = ["places", "historic_welfare_checks", "historic_all_suf", "historic_nightly", "valid_locations", "place_synonyms"]
+FILELIST = ["places", "historic_welfare_checks", "historic_all_suf", "historic_nightly", "valid_locations", "place_synonyms", "location_corrections"]
 STORAGEACCOUNTNAME = os.environ["STORAGEACCOUNTNAME"]
 SERVER = os.environ["SERVER"]
 ADMINUSER = os.environ["ADMINUSER"]

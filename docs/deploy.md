@@ -132,6 +132,8 @@ Upload the various CSV files containing historical data.
 
     - `place_synonyms.csv`
 
+    - `location_corrections.csv`
+
 Once the files are uploaded, you can continue.
 
 ## Setting up AAD permissions for SQL Server

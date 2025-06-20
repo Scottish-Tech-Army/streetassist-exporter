@@ -366,6 +366,25 @@ FROM dbo.all_suf_view
 WHERE servicedelivery_date >= '2024-01-01';
 GO
 
+-- Replace locations which were missing and need to be added later
+PRINT("Replace missing locations in AllDigitalSUF");
+GO
+UPDATE A
+  SET A.venue_name = S.location
+FROM   dbo.AllDigitalSUF AS A
+  JOIN   location_corrections   AS S
+    ON   A.form_id = S.form_id;
+GO
+
+PRINT("Replace missing locations in WelfareChecks");
+GO
+UPDATE A
+  SET A.Location = S.location
+FROM   dbo.WelfareChecks AS A
+  JOIN   location_corrections   AS S
+    ON   A.form_id = S.form_id;
+GO
+
 -- Replace locations which are just synonyms in both AllDigitalSUF and WelfareChecks
 PRINT("Apply location synonyms to AllDigitalSUF");
 GO
@@ -384,3 +403,4 @@ FROM dbo.WelfareChecks AS W
   JOIN place_synonyms   AS S
     ON W.Location = S.synonym;
 GO
+

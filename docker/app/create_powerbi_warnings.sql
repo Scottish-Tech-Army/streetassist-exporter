@@ -5,7 +5,9 @@ PRINT("Create Locations not in Places table - locations that are in inspections 
 GO
 DROP TABLE IF EXISTS dbo.WarningLocationsNotInPlaces;
 GO
-CREATE TABLE dbo.WarningLocationsNotInPlaces (
+DROP TABLE IF EXISTS dbo.WarningLocationsUsedNotInPlaces;
+GO
+CREATE TABLE dbo.WarningLocationsUsedNotInPlaces (
     audit_id NVARCHAR(255),
     service_date DATE,
     location NVARCHAR(255),
@@ -16,7 +18,7 @@ GO
 
 PRINT("Copy anomalous digital SUF data into tables");
 GO
-INSERT INTO dbo.WarningLocationsNotInPlaces
+INSERT INTO dbo.WarningLocationsUsedNotInPlaces
 (
     audit_id,
     service_date,
@@ -37,7 +39,7 @@ GO
 
 PRINT("Copy anomalous Welfare Check data into tables");
 GO
-INSERT INTO dbo.WarningLocationsNotInPlaces
+INSERT INTO dbo.WarningLocationsUsedNotInPlaces
 (
     audit_id,
     service_date,

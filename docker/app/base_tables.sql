@@ -63,6 +63,16 @@ CREATE TABLE dbo.place_synonyms (
 );
 GO
 
+-- Create the locations correction table - where we store corrected values for locations
+PRINT("Create the locations_corrections table");
+DROP TABLE IF EXISTS dbo.location_corrections;
+GO
+CREATE TABLE dbo.location_corrections (
+        audit_id NVARCHAR(255),
+        form_id NVARCHAR(255),
+        location NVARCHAR(255)
+);
+
 -- Create the historic WelfareChecks table, manually uploaded from earlier data
 PRINT("Create the historic WelfareChecks table");
 DROP TABLE IF EXISTS dbo.historic_welfare_checks;
