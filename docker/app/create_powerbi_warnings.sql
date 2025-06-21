@@ -64,7 +64,7 @@ GO
 DROP TABLE IF EXISTS dbo.WarningValidLocationsNotInPlaces;
 GO
 CREATE TABLE dbo.WarningValidLocationsNotInPlaces (
-    name NVARCHAR(255) NOT NULL PRIMARY KEY
+    name NVARCHAR(255)
 );
 GO
 INSERT INTO dbo.WarningValidLocationsNotInPlaces
