@@ -35,7 +35,8 @@ PRINT("Create the places table");
 DROP TABLE IF EXISTS dbo.places;
 GO
 CREATE TABLE dbo.places (
-        name NVARCHAR(255) NOT NULL,
+        name NVARCHAR(255) NOT NULL UNIQUE,
+        location_type NVARCHAR(255),
         name_google NVARCHAR(255),
         address NVARCHAR(255),
         latitude DECIMAL(12,8), -- latitude
