@@ -69,6 +69,7 @@ SELECT
         ELSE 0
     END AS Other,
     i.job_location as venue_name,
+    i.last_venue_visited as last_venue_visited,
     i.injuries as has_the_client_sustained_any_injuries,
     i.observations as does_the_client_require_observations,
     i.found_alone as found_alone,

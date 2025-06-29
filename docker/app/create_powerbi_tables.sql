@@ -84,6 +84,7 @@ CREATE TABLE dbo.AllDigitalSUF (
     provisions_other INT,
     -- General
     venue_name NVARCHAR(255),
+    last_venue_visited NVARCHAR(255),
     Calcd_TreatmentTime_Mins_ INT, -- total_job_minutes
     has_the_client_sustained_any_injuries NVARCHAR(255), -- injuries
     does_the_client_require_observations NVARCHAR(255), -- observations
@@ -151,6 +152,7 @@ INSERT INTO dbo.AllDigitalSUF
     Other4,
     provisions_other,
     venue_name,
+    last_venue_visited,
     Calcd_TreatmentTime_Mins_,
     has_the_client_sustained_any_injuries,
     does_the_client_require_observations,
@@ -211,6 +213,7 @@ SELECT
     provisions_other AS Other4,
     provisions_other AS provisions_other,
     venue_name AS venue_name,
+    NULL AS last_venue_visited, -- No corresponding source data
     total_job_minutes AS Calcd_TreatmentTime_Mins_,
     injuries AS has_the_client_sustained_any_injuries,
     observations AS does_the_client_require_observations,
@@ -277,6 +280,7 @@ INSERT INTO dbo.AllDigitalSUF
     Other4,
     provisions_other,
     venue_name,
+    last_venue_visited,
     Calcd_TreatmentTime_Mins_,
     has_the_client_sustained_any_injuries,
     does_the_client_require_observations,
@@ -337,6 +341,7 @@ SELECT
     Other4                     AS Other4,                        -- view calculates Other4 from client_provisions
     provisions_other           AS provisions_other,              -- view calculates provisions_other
     venue_name                 AS venue_name,                    -- view provides job_location as venue_name
+    last_venue_visited         AS last_venue_name,               -- view provides last_venue_visited
     Calcd_TreatmentTime_Mins_  AS Calcd_TreatmentTime_Mins_,     -- view converts total_job_minutes to integer
     has_the_client_sustained_any_injuries AS has_the_client_sustained_any_injuries,    -- view provides injuries
     does_the_client_require_observations AS does_the_client_require_observations,        -- view provides observations
@@ -395,6 +400,15 @@ FROM   dbo.AllDigitalSUF AS A
     ON   A.venue_name = S.synonym;
 GO
 
+PRINT("Apply location synonyms to AllDigitalSUF last venues");
+GO
+UPDATE A
+  SET A.last_venue_visited = S.name
+FROM   dbo.AllDigitalSUF AS A
+  JOIN   place_synonyms   AS S
+    ON   A.last_venue_visited = S.synonym;
+GO
+
 PRINT("Apply location synonyms to WelfareChecks");
 GO
 UPDATE W
@@ -404,3 +418,12 @@ FROM dbo.WelfareChecks AS W
     ON W.Location = S.synonym;
 GO
 
+-- If the SU was at a venue, then they definitely visited that venue last whatever they entered on the form...
+PRINT("Set last venue visited where there is a venue");
+GO
+UPDATE A
+  SET A.last_venue_visited = A.venue_name
+FROM dbo.AllDigitalSUF AS A
+JOIN places P ON A.venue_name = P.name AND P.location_type = 'Venue'
+WHERE A.venue_name IS NOT NULL;
+GO
