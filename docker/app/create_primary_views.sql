@@ -8,8 +8,8 @@ GO
 DROP VIEW IF EXISTS dbo.signincount;
 GO
 
--- General inspection view
-PRINT("Create the general inspection view");
+-- General inspection view - SUF only
+PRINT("Create the general inspection view for SUF");
 GO
 CREATE OR ALTER VIEW dbo.inspectionview
 WITH SCHEMABINDING
@@ -45,7 +45,9 @@ SELECT
     MAX(CASE WHEN ii.item_id = 'bce12607-00bc-4e26-a40b-d2d3aec84920' AND ii.type = 'list' THEN ii.response END) AS job_category,
     MAX(CASE WHEN ii.item_id = 'b9c94de8-b8ea-4a13-a618-0b9f97945c08' AND ii.type = 'list' THEN ii.response END) AS job_outcome,
     MAX(CASE WHEN (ii.item_id = '6ee84dfe-7b59-4989-a9fe-486b50e82bc2' OR ii.item_id = 'b11a1d3b-cf78-4ef7-b08e-cf54a2e4b41c') AND ii.type = 'list' THEN ii.response END) AS job_location,
+    MAX(CASE WHEN ii.item_id = 'xxxtobeprovided' AND ii.type = 'textsingle' THEN ii.response END) AS job_location_manual,
     MAX(CASE WHEN (ii.item_id = '1cca3ab8-0195-421b-8066-27070717229b' OR ii.item_id = '5f973fe4-911b-48a7-b316-c9ff6e066d84') AND ii.type = 'list' THEN ii.response END) AS last_venue_visited,
+    MAX(CASE WHEN ii.item_id = 'xxxtobeprovided' AND ii.type = 'textsingle' THEN ii.response END) AS last_venue_visited_manual,
     MAX(CASE WHEN (ii.item_id = '076c1f85-1c3e-4eba-8fa5-f46e850eb60e' OR ii.item_id = 'ca980823-c858-49de-90a2-b18933ef3383') AND ii.type = 'list' THEN ii.response END) AS nationality,
     MAX(CASE WHEN ii.item_id = '4d2dbd66-b3f4-4580-8a77-ebfbba9f05b8' AND ii.type = 'list' THEN ii.response END) AS ambulance_requested_who,
     MAX(CASE WHEN ii.item_id = '07b963a3-f99d-4e7d-a450-bd8ad6f2c7fe' AND ii.type = 'list' THEN ii.response END) AS ambulance_cancelled_who,
@@ -92,6 +94,7 @@ SELECT
     i.service_date as service_date,
     MAX(CASE WHEN ii.item_id = '7bbfd9b0-9e8b-4571-84fe-b0abc84bf7b1' AND ii.type = 'question' THEN ii.response END) AS gender,
     MAX(CASE WHEN ii.item_id = 'b11a1d3b-cf78-4ef7-b08e-cf54a2e4b41c' AND ii.type = 'list' THEN ii.response END) AS location,
+    MAX(CASE WHEN ii.item_id = '53651ad1-1ec3-4944-8885-12aed5f90603' AND ii.type = 'textsingle' THEN ii.response END) AS location_manual,
     MAX(CASE WHEN ii.item_id = '30b9229d-557b-468c-8a0c-141385a46946' AND ii.type = 'list' THEN ii.response END) AS check_type,
     MAX(CASE WHEN ii.item_id = 'f3245d46-ea77-11e1-aff1-0800200c9a66' AND ii.type = 'textsingle' THEN ii.response END) AS form_id
 FROM dbo.inspections i

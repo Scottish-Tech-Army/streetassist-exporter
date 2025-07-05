@@ -390,6 +390,18 @@ FROM   dbo.WelfareChecks AS A
     ON   A.form_id = S.form_id;
 GO
 
+-- Where a location was added manually and has a valid value, and where the current value is "Not on list", copy it over
+PRINT("Copy manual locations in WelfareChecks");
+GO
+UPDATE W
+  SET W.Location = V.location_manual
+FROM dbo.WelfareChecks AS W
+  JOIN dbo.welfarecheckview AS V
+    ON W.auditID = V.audit_id
+WHERE V.location_manual IN (SELECT name FROM places)
+    AND W.Location LIKE 'Not On List%';
+GO
+
 -- Replace locations which are just synonyms in both AllDigitalSUF and WelfareChecks
 PRINT("Apply location synonyms to AllDigitalSUF");
 GO
