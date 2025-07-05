@@ -8,6 +8,7 @@ import requests
 import subprocess
 import sys
 import yaml
+import hashlib
 
 FILELIST = ["places", "historic_welfare_checks", "historic_all_suf", "historic_nightly", "valid_locations", "place_synonyms", "location_corrections"]
 STORAGEACCOUNTNAME = os.environ["STORAGEACCOUNTNAME"]
@@ -21,13 +22,22 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s.%(msecs)03d - %(levelname)s - %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 
-def download_csv(csvfile):
+def download_csv(csvfile, path=None):
     logger.info("Downloading CSV file %s", csvfile)
-    cmd = f"az storage blob download -f \"/tmp/{csvfile}\" -c csvdata -n {csvfile} --account-name {STORAGEACCOUNTNAME} --auth-mode login"
+    if not path:
+        path = f"/tmp/{csvfile}"
+    cmd = f"az storage blob download -f \"{path}\" -c csvdata -n {csvfile} --account-name {STORAGEACCOUNTNAME} --auth-mode login"
     result = subprocess.run(cmd, shell=True, check=True, text=True, stdout=subprocess.DEVNULL)
 
-def upload_tsv(file, tsvfile):
-    logger.info("Uploading TSV file %s", tsvfile)
+def upload_csv(csvfile):
+    # Upload the CSV file to Azure Storage; this is for backup purposes.
+    logger.info("Uploading CSV file %s", csvfile)
+    cmd = f"az storage blob upload -f \"/tmp/{csvfile}\" -c csvdata -n {csvfile} --account-name {STORAGEACCOUNTNAME} --overwrite --auth-mode login"
+    result = subprocess.run(cmd, shell=True, check=True, text=True, stdout=subprocess.DEVNULL)
+
+def load_tsv(file, tsvfile):
+    # Load the TSV file to the database using bcp.
+    logger.info("Loading TSV file %s", tsvfile)
     cmd = f"bcp dbo.{file} in {tsvfile} -S {SERVER} -U {ADMINUSER} -P {ADMINPWD} -d {DB} -c -r \"\\n\" -F 2"
     result = subprocess.run(cmd, shell=True, check=True, text=True)
 
@@ -96,9 +106,30 @@ def main():
         tsvfile = f"/tmp/{file}.tsv"
 
         if file == "valid_locations":
-            # Special case - extract this data
+            # Special case - download the CSV file that exists if any, then get the valid locations from SafetyCulture.
+            # If the same, just continue; if different, upload the new one so we have an archived copy.
+            logger.info("Handling valid_locations file")
+            saved_file = f"/tmp/{csvfile}.orig"
+            download_csv(csvfile, path=saved_file)
             get_valid_locations(api_token)
+            def file_hash(filepath):
+                hasher = hashlib.sha256()
+                with open(filepath, "rb") as f:
+                    for chunk in iter(lambda: f.read(4096), b""):
+                        hasher.update(chunk)
+                return hasher.hexdigest()
+
+            if os.path.exists(saved_file):
+                orig_hash = file_hash(saved_file)
+                new_hash = file_hash(f"/tmp/{csvfile}")
+                if orig_hash == new_hash:
+                    logger.info("No changes in valid_locations.csv, skipping upload")
+                    continue
+                else:
+                    logger.info("valid_locations.csv has changed, proceeding with upload.")
+                    upload_csv(csvfile)
         else:
+            # Just download the file
             download_csv(csvfile)
 
         columns = read_format(file)
@@ -147,7 +178,7 @@ def main():
                     reordered_row = [clean_row[column_map[col]] if col in column_map else None for col in columns]
                     writer.writerow(reordered_row)
 
-        upload_tsv(file, tsvfile)
+        load_tsv(file, tsvfile)
 
 if __name__ == "__main__":
     main()

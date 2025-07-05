@@ -282,15 +282,18 @@ resource blobContainer 'Microsoft.Storage/storageAccounts/blobServices/container
   }
 }
 
-// Assign the "Storage Blob Data Reader" role to the UAMI at the blob container level.
-// Role ID for Storage Blob Data Reader: 2a2b9908-6ea1-4ae2-8e65-a410df84e7d1.
-resource blobDataReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+// Assign the "Storage Blob Data Contributor" role to the UAMI at the blob container level.
+// Role ID for Storage Blob Data Contributor: ba92f5b4-2d11-453d-a403-e96b0029c9fe
+resource blobDataContributorRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
   // A deterministic GUID is generated based on the container, identity, and role definition.
-  name: guid(uami.id, blobContainer.id, '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1')
+  name: guid(uami.id,
+            blobContainer.id,
+            'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
   scope: blobContainer
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1')
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
     principalId: uami.properties.principalId
     principalType: 'ServicePrincipal'
   }
 }
+

@@ -1,5 +1,6 @@
 #!/bin/bash
 # Script to build the container, and do a manual export.
+# Test purposes only.
 set -euo pipefail
 
 # This script must run from the parent directory of the scripts directory
