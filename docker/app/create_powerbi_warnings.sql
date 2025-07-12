@@ -1,6 +1,6 @@
 -- sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -i create_powerbi_warnings.sql
 --
--- Create a table of anomalies
+-- Create tables of anomalies
 PRINT("Create Locations not in Places table - locations that are in inspections but not in the places table");
 GO
 DROP TABLE IF EXISTS dbo.WarningLocationsNotInPlaces;
@@ -82,5 +82,5 @@ SELECT
     vl.name
 FROM [dbo].[valid_locations] vl
 LEFT JOIN places p ON vl.name = p.name
-WHERE p.name IS NULL;
+WHERE p.name IS NULL and vl.name not like 'Not On List%';
 GO

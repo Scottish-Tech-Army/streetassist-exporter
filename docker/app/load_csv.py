@@ -123,8 +123,8 @@ def main():
                 orig_hash = file_hash(saved_file)
                 new_hash = file_hash(f"/tmp/{csvfile}")
                 if orig_hash == new_hash:
-                    logger.info("No changes in valid_locations.csv, skipping upload")
-                    continue
+                    logger.info("No changes in valid_locations.csv, skipping upload of CSV")
+                    pass
                 else:
                     logger.info("valid_locations.csv has changed, proceeding with upload.")
                     upload_csv(csvfile)

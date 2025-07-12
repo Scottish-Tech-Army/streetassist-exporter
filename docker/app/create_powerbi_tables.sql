@@ -402,6 +402,28 @@ WHERE V.location_manual IN (SELECT name FROM places)
     AND W.Location LIKE 'Not On List%';
 GO
 
+PRINT("Copy manual locations in SUF venues");
+GO
+UPDATE A
+  SET A.venue_name = V.job_location_manual
+FROM dbo.AllDigitalSUF AS A
+  JOIN dbo.inspectionview AS V
+    ON A.auditID = V.audit_id
+WHERE V.job_location_manual IN (SELECT name FROM places)
+    AND A.venue_name LIKE 'Not On List%';
+GO
+
+PRINT("Copy manual locations in SUF last venues");
+GO
+UPDATE A
+  SET A.last_venue_visited = V.last_venue_visited_manual
+FROM dbo.AllDigitalSUF AS A
+  JOIN dbo.inspectionview AS V
+    ON A.auditID = V.audit_id
+WHERE V.last_venue_visited_manual IN (SELECT name FROM places)
+    AND A.last_venue_visited LIKE 'Not On List%';
+GO
+
 -- Replace locations which are just synonyms in both AllDigitalSUF and WelfareChecks
 PRINT("Apply location synonyms to AllDigitalSUF");
 GO
@@ -428,14 +450,4 @@ UPDATE W
 FROM dbo.WelfareChecks AS W
   JOIN place_synonyms   AS S
     ON W.Location = S.synonym;
-GO
-
--- If the SU was at a venue, then they definitely visited that venue last whatever they entered on the form...
-PRINT("Set last venue visited where there is a venue");
-GO
-UPDATE A
-  SET A.last_venue_visited = A.venue_name
-FROM dbo.AllDigitalSUF AS A
-JOIN places P ON A.venue_name = P.name AND P.location_type = 'Venue'
-WHERE A.venue_name IS NOT NULL;
 GO

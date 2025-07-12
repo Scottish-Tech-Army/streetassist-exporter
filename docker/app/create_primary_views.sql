@@ -30,7 +30,7 @@ SELECT
          (ii.item_id = '2d8cf6fd-4214-4eb3-af1b-4aba9fd2f338')) AND ii.type = 'question'
         THEN ii.response END) AS police_requested,
     -- Annoyingly, this item can be either "injuries or observations" followed up by 6b2dd713-e040-4322-886e-c421fbd38de7
-    -- or else just "injuries". Need to figure out how to distinguish the two. xxx
+    -- or else just "injuries". Need to figure out how to distinguish the two.
     MAX(CASE WHEN ii.item_id = '0286c9b4-d8de-4c46-a624-e52a3a8fcc32' AND ii.type = 'question' THEN ii.response END) AS injuries,
     MAX(CASE WHEN ii.item_id = '0fe1fbb6-4eb1-4b8c-bdd3-8d9700f79ee2' AND ii.type = 'question' THEN ii.response END) AS observations,
     MAX(CASE WHEN ii.item_id = '1cc7a1f8-7d73-42c6-9978-e2fb28c0085c' AND ii.type = 'question' THEN ii.response END) AS residency,
@@ -45,7 +45,7 @@ SELECT
     MAX(CASE WHEN ii.item_id = 'bce12607-00bc-4e26-a40b-d2d3aec84920' AND ii.type = 'list' THEN ii.response END) AS job_category,
     MAX(CASE WHEN ii.item_id = 'b9c94de8-b8ea-4a13-a618-0b9f97945c08' AND ii.type = 'list' THEN ii.response END) AS job_outcome,
     MAX(CASE WHEN (ii.item_id = '6ee84dfe-7b59-4989-a9fe-486b50e82bc2' OR ii.item_id = 'b11a1d3b-cf78-4ef7-b08e-cf54a2e4b41c') AND ii.type = 'list' THEN ii.response END) AS job_location,
-    MAX(CASE WHEN ii.item_id = 'xxxtobeprovided' AND ii.type = 'textsingle' THEN ii.response END) AS job_location_manual,
+    MAX(CASE WHEN ii.item_id = 'c504089d-28d6-4b66-b336-3d0429b5c578' AND ii.type = 'textsingle' THEN ii.response END) AS job_location_manual,
     MAX(CASE WHEN (ii.item_id = '1cca3ab8-0195-421b-8066-27070717229b' OR ii.item_id = '5f973fe4-911b-48a7-b316-c9ff6e066d84') AND ii.type = 'list' THEN ii.response END) AS last_venue_visited,
     MAX(CASE WHEN ii.item_id = 'xxxtobeprovided' AND ii.type = 'textsingle' THEN ii.response END) AS last_venue_visited_manual,
     MAX(CASE WHEN (ii.item_id = '076c1f85-1c3e-4eba-8fa5-f46e850eb60e' OR ii.item_id = 'ca980823-c858-49de-90a2-b18933ef3383') AND ii.type = 'list' THEN ii.response END) AS nationality,
