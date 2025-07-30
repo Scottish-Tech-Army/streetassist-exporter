@@ -22,5 +22,7 @@ The contents of this repository are organised as follows.
 
 - To deploy a new instance of the tooling, read the [deployment documentation](docs/deploy.md).
 
+- If you want to manually run the tooling, update the code, or view raw SQL data, there are instructions in the [operations documentation](docs/operations.md).
+
 - For detailed information about database tables, read the [data design](docs/data.md). **This data documentation is a work in progress.**
 

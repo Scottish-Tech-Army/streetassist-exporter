@@ -8,8 +8,8 @@ GO
 DROP VIEW IF EXISTS dbo.signincount;
 GO
 
--- General inspection view
-PRINT("Create the general inspection view");
+-- General inspection view - SUF only
+PRINT("Create the general inspection view for SUF");
 GO
 CREATE OR ALTER VIEW dbo.inspectionview
 WITH SCHEMABINDING
@@ -30,7 +30,7 @@ SELECT
          (ii.item_id = '2d8cf6fd-4214-4eb3-af1b-4aba9fd2f338')) AND ii.type = 'question'
         THEN ii.response END) AS police_requested,
     -- Annoyingly, this item can be either "injuries or observations" followed up by 6b2dd713-e040-4322-886e-c421fbd38de7
-    -- or else just "injuries". Need to figure out how to distinguish the two. xxx
+    -- or else just "injuries". Need to figure out how to distinguish the two.
     MAX(CASE WHEN ii.item_id = '0286c9b4-d8de-4c46-a624-e52a3a8fcc32' AND ii.type = 'question' THEN ii.response END) AS injuries,
     MAX(CASE WHEN ii.item_id = '0fe1fbb6-4eb1-4b8c-bdd3-8d9700f79ee2' AND ii.type = 'question' THEN ii.response END) AS observations,
     MAX(CASE WHEN ii.item_id = '1cc7a1f8-7d73-42c6-9978-e2fb28c0085c' AND ii.type = 'question' THEN ii.response END) AS residency,
@@ -45,6 +45,9 @@ SELECT
     MAX(CASE WHEN ii.item_id = 'bce12607-00bc-4e26-a40b-d2d3aec84920' AND ii.type = 'list' THEN ii.response END) AS job_category,
     MAX(CASE WHEN ii.item_id = 'b9c94de8-b8ea-4a13-a618-0b9f97945c08' AND ii.type = 'list' THEN ii.response END) AS job_outcome,
     MAX(CASE WHEN (ii.item_id = '6ee84dfe-7b59-4989-a9fe-486b50e82bc2' OR ii.item_id = 'b11a1d3b-cf78-4ef7-b08e-cf54a2e4b41c') AND ii.type = 'list' THEN ii.response END) AS job_location,
+    MAX(CASE WHEN ii.item_id = 'c504089d-28d6-4b66-b336-3d0429b5c578' AND ii.type = 'textsingle' THEN ii.response END) AS job_location_manual,
+    MAX(CASE WHEN (ii.item_id = '1cca3ab8-0195-421b-8066-27070717229b' OR ii.item_id = '5f973fe4-911b-48a7-b316-c9ff6e066d84') AND ii.type = 'list' THEN ii.response END) AS last_venue_visited,
+    MAX(CASE WHEN ii.item_id = 'xxxtobeprovided' AND ii.type = 'textsingle' THEN ii.response END) AS last_venue_visited_manual,
     MAX(CASE WHEN (ii.item_id = '076c1f85-1c3e-4eba-8fa5-f46e850eb60e' OR ii.item_id = 'ca980823-c858-49de-90a2-b18933ef3383') AND ii.type = 'list' THEN ii.response END) AS nationality,
     MAX(CASE WHEN ii.item_id = '4d2dbd66-b3f4-4580-8a77-ebfbba9f05b8' AND ii.type = 'list' THEN ii.response END) AS ambulance_requested_who,
     MAX(CASE WHEN ii.item_id = '07b963a3-f99d-4e7d-a450-bd8ad6f2c7fe' AND ii.type = 'list' THEN ii.response END) AS ambulance_cancelled_who,
@@ -91,13 +94,15 @@ SELECT
     i.service_date as service_date,
     MAX(CASE WHEN ii.item_id = '7bbfd9b0-9e8b-4571-84fe-b0abc84bf7b1' AND ii.type = 'question' THEN ii.response END) AS gender,
     MAX(CASE WHEN ii.item_id = 'b11a1d3b-cf78-4ef7-b08e-cf54a2e4b41c' AND ii.type = 'list' THEN ii.response END) AS location,
-    MAX(CASE WHEN ii.item_id = '30b9229d-557b-468c-8a0c-141385a46946' AND ii.type = 'list' THEN ii.response END) AS check_type
+    MAX(CASE WHEN ii.item_id = '53651ad1-1ec3-4944-8885-12aed5f90603' AND ii.type = 'textsingle' THEN ii.response END) AS location_manual,
+    MAX(CASE WHEN ii.item_id = '30b9229d-557b-468c-8a0c-141385a46946' AND ii.type = 'list' THEN ii.response END) AS check_type,
+    MAX(CASE WHEN ii.item_id = 'f3245d46-ea77-11e1-aff1-0800200c9a66' AND ii.type = 'textsingle' THEN ii.response END) AS form_id
 FROM dbo.inspections i
 JOIN dbo.inspection_items ii
   ON i.audit_id2 = ii.audit_id
 WHERE
     i.template_id2 = 'template_b68037b3adca46d894a2e155032720f7' AND
-    (ii.type = "list" OR ii.type = "question")
+    (ii.type = "list" OR ii.type = "question" OR ii.type = "textsingle")
 GROUP BY
     i.audit_id2,
     i.template_id2,

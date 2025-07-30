@@ -8,7 +8,8 @@ CREATE TABLE dbo.WelfareChecks (
     Conducted DATE NOT NULL, -- service_date
     Gender NVARCHAR(255),
     Location NVARCHAR(255),
-    Type NVARCHAR(255)
+    Type NVARCHAR(255),
+    form_id NVARCHAR(255)
 );
 GO
 
@@ -26,13 +27,14 @@ GO
 
 -- Copy in the data from the view, but not if there's already a record in the table.
 PRINT("Insert WelfareChecks from view");
-INSERT INTO dbo.WelfareChecks (auditID, Conducted, Gender, Location, Type)
+INSERT INTO dbo.WelfareChecks (auditID, Conducted, Gender, Location, Type, form_id)
 SELECT
     v.audit_id,
     v.service_date,
     v.gender,
     v.location,
-    v.check_type
+    v.check_type,
+    v.form_id
 FROM dbo.welfarecheckview v
 WHERE NOT EXISTS (
     SELECT 1
@@ -82,6 +84,7 @@ CREATE TABLE dbo.AllDigitalSUF (
     provisions_other INT,
     -- General
     venue_name NVARCHAR(255),
+    last_venue_visited NVARCHAR(255),
     Calcd_TreatmentTime_Mins_ INT, -- total_job_minutes
     has_the_client_sustained_any_injuries NVARCHAR(255), -- injuries
     does_the_client_require_observations NVARCHAR(255), -- observations
@@ -149,6 +152,7 @@ INSERT INTO dbo.AllDigitalSUF
     Other4,
     provisions_other,
     venue_name,
+    last_venue_visited,
     Calcd_TreatmentTime_Mins_,
     has_the_client_sustained_any_injuries,
     does_the_client_require_observations,
@@ -209,6 +213,7 @@ SELECT
     provisions_other AS Other4,
     provisions_other AS provisions_other,
     venue_name AS venue_name,
+    NULL AS last_venue_visited, -- No corresponding source data
     total_job_minutes AS Calcd_TreatmentTime_Mins_,
     injuries AS has_the_client_sustained_any_injuries,
     observations AS does_the_client_require_observations,
@@ -275,6 +280,7 @@ INSERT INTO dbo.AllDigitalSUF
     Other4,
     provisions_other,
     venue_name,
+    last_venue_visited,
     Calcd_TreatmentTime_Mins_,
     has_the_client_sustained_any_injuries,
     does_the_client_require_observations,
@@ -335,6 +341,7 @@ SELECT
     Other4                     AS Other4,                        -- view calculates Other4 from client_provisions
     provisions_other           AS provisions_other,              -- view calculates provisions_other
     venue_name                 AS venue_name,                    -- view provides job_location as venue_name
+    last_venue_visited         AS last_venue_name,               -- view provides last_venue_visited
     Calcd_TreatmentTime_Mins_  AS Calcd_TreatmentTime_Mins_,     -- view converts total_job_minutes to integer
     has_the_client_sustained_any_injuries AS has_the_client_sustained_any_injuries,    -- view provides injuries
     does_the_client_require_observations AS does_the_client_require_observations,        -- view provides observations
@@ -362,4 +369,85 @@ SELECT
     NULL                       AS who_cancelled_police           -- no corresponding field in the view
 FROM dbo.all_suf_view
 WHERE servicedelivery_date >= '2024-01-01';
+GO
+
+-- Replace locations which were missing and need to be added later
+PRINT("Replace missing locations in AllDigitalSUF");
+GO
+UPDATE A
+  SET A.venue_name = S.location
+FROM   dbo.AllDigitalSUF AS A
+  JOIN   location_corrections   AS S
+    ON   A.form_id = S.form_id;
+GO
+
+PRINT("Replace missing locations in WelfareChecks");
+GO
+UPDATE A
+  SET A.Location = S.location
+FROM   dbo.WelfareChecks AS A
+  JOIN   location_corrections   AS S
+    ON   A.form_id = S.form_id;
+GO
+
+-- Where a location was added manually and has a valid value, and where the current value is "Not on list", copy it over
+PRINT("Copy manual locations in WelfareChecks");
+GO
+UPDATE W
+  SET W.Location = V.location_manual
+FROM dbo.WelfareChecks AS W
+  JOIN dbo.welfarecheckview AS V
+    ON W.auditID = V.audit_id
+WHERE V.location_manual IN (SELECT name FROM places)
+    AND W.Location LIKE 'Not On List%';
+GO
+
+PRINT("Copy manual locations in SUF venues");
+GO
+UPDATE A
+  SET A.venue_name = V.job_location_manual
+FROM dbo.AllDigitalSUF AS A
+  JOIN dbo.inspectionview AS V
+    ON A.auditID = V.audit_id
+WHERE V.job_location_manual IN (SELECT name FROM places)
+    AND A.venue_name LIKE 'Not On List%';
+GO
+
+PRINT("Copy manual locations in SUF last venues");
+GO
+UPDATE A
+  SET A.last_venue_visited = V.last_venue_visited_manual
+FROM dbo.AllDigitalSUF AS A
+  JOIN dbo.inspectionview AS V
+    ON A.auditID = V.audit_id
+WHERE V.last_venue_visited_manual IN (SELECT name FROM places)
+    AND A.last_venue_visited LIKE 'Not On List%';
+GO
+
+-- Replace locations which are just synonyms in both AllDigitalSUF and WelfareChecks
+PRINT("Apply location synonyms to AllDigitalSUF");
+GO
+UPDATE A
+  SET A.venue_name = S.name
+FROM   dbo.AllDigitalSUF AS A
+  JOIN   place_synonyms   AS S
+    ON   A.venue_name = S.synonym;
+GO
+
+PRINT("Apply location synonyms to AllDigitalSUF last venues");
+GO
+UPDATE A
+  SET A.last_venue_visited = S.name
+FROM   dbo.AllDigitalSUF AS A
+  JOIN   place_synonyms   AS S
+    ON   A.last_venue_visited = S.synonym;
+GO
+
+PRINT("Apply location synonyms to WelfareChecks");
+GO
+UPDATE W
+  SET W.Location = S.name
+FROM dbo.WelfareChecks AS W
+  JOIN place_synonyms   AS S
+    ON W.Location = S.synonym;
 GO

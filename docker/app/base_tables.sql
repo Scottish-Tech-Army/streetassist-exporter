@@ -35,16 +35,44 @@ PRINT("Create the places table");
 DROP TABLE IF EXISTS dbo.places;
 GO
 CREATE TABLE dbo.places (
-        name NVARCHAR(255) NOT NULL,
+        name NVARCHAR(255) NOT NULL UNIQUE,
+        location_type NVARCHAR(255),
         name_google NVARCHAR(255),
         address NVARCHAR(255),
         latitude DECIMAL(12,8), -- latitude
-        longitude DECIMAL(12,8), -- longitude
-        place_id NVARCHAR(255),
-        icon NVARCHAR(255),
-        icon_hex NVARCHAR(255)
+        longitude DECIMAL(12,8) -- longitude
 );
 GO
+
+-- Create the valid_locations table - i.e. what SafetyCulture allows for new inspections
+PRINT("Create the valid_locations table");
+GO
+DROP TABLE IF EXISTS dbo.valid_locations;
+GO
+CREATE TABLE dbo.valid_locations (
+        name NVARCHAR(255) NOT NULL
+);
+GO
+
+-- Create the place_synonyms table - values that we map in the data if for example the spelling has changed
+PRINT("Create the place_synonyms table");
+DROP TABLE IF EXISTS dbo.place_synonyms;
+GO
+CREATE TABLE dbo.place_synonyms (
+        name NVARCHAR(255) NOT NULL,
+        synonym NVARCHAR(255) NOT NULL
+);
+GO
+
+-- Create the locations correction table - where we store corrected values for locations
+PRINT("Create the locations_corrections table");
+DROP TABLE IF EXISTS dbo.location_corrections;
+GO
+CREATE TABLE dbo.location_corrections (
+        audit_id NVARCHAR(255),
+        form_id NVARCHAR(255),
+        location NVARCHAR(255)
+);
 
 -- Create the historic WelfareChecks table, manually uploaded from earlier data
 PRINT("Create the historic WelfareChecks table");
@@ -248,3 +276,4 @@ CREATE TABLE dbo.historic_nightly (
     LIVE_REPORT_DATA_Stood_Down INT
 );
 GO
+

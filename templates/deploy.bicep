@@ -263,23 +263,37 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   }
 }
 
+// Create a Blob Service within the Storage Account, needed for versioning.
+// If you don't do this, the blob service is created with default settings.
+resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2021-09-01' = {
+  name: 'default'
+  parent: storageAccount
+  properties: {
+    isVersioningEnabled: true
+  }
+}
+
 // Create a blob container within the Storage Account.
 resource blobContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-02-01' = {
-  name: '${storageAccount.name}/default/${blobContainerName}'
+  name: blobContainerName
+  parent: blobService
   properties: {
     publicAccess: 'None'
   }
 }
 
-// Assign the "Storage Blob Data Reader" role to the UAMI at the blob container level.
-// Role ID for Storage Blob Data Reader: 2a2b9908-6ea1-4ae2-8e65-a410df84e7d1.
-resource blobDataReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+// Assign the "Storage Blob Data Contributor" role to the UAMI at the blob container level.
+// Role ID for Storage Blob Data Contributor: ba92f5b4-2d11-453d-a403-e96b0029c9fe
+resource blobDataContributorRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
   // A deterministic GUID is generated based on the container, identity, and role definition.
-  name: guid(uami.id, blobContainer.id, '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1')
+  name: guid(uami.id,
+            blobContainer.id,
+            'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
   scope: blobContainer
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1')
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
     principalId: uami.properties.principalId
     principalType: 'ServicePrincipal'
   }
 }
+
