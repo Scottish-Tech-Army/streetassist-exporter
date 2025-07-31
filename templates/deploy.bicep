@@ -33,8 +33,11 @@ param scheduleCron string = '0 6 * * *'
 @description('Name of the storage account')
 param storageAccountName string
 
-@description('Blob storage container')
+@description('Blob storage container for csvdata')
 param blobContainerName string = 'csvdata'
+
+@description('Blob storage container for automation')
+param blobContainerAutoName string = 'automation'
 
 // end
 
@@ -282,6 +285,49 @@ resource blobContainer 'Microsoft.Storage/storageAccounts/blobServices/container
   }
 }
 
+// Create a blob container within the Storage Account.
+resource blobContainerAuto 'Microsoft.Storage/storageAccounts/blobServices/containers@2021-02-01' = {
+  name: blobContainerAutoName
+  parent: blobService
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
+// Burn down old versions of blobs in the blobContainerAuto - we keep only one day.
+resource lifecycleMgmt 'Microsoft.Storage/storageAccounts/managementPolicies@2021-04-01' = {
+  name: 'default'
+  parent: storageAccount
+  properties: {
+    policy: {
+      rules: [
+        {
+          enabled: true
+          name: 'delete-old-versions-auto'
+          type: 'Lifecycle'
+          definition: {
+            actions: {
+              version: {
+                delete: {
+                  daysAfterCreationGreaterThan: 1
+                }
+              }
+            }
+            filters: {
+              blobTypes: [
+                'blockBlob'
+              ]
+              prefixMatch: [
+                '${blobContainerAutoName}/'
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
 // Assign the "Storage Blob Data Contributor" role to the UAMI at the blob container level.
 // Role ID for Storage Blob Data Contributor: ba92f5b4-2d11-453d-a403-e96b0029c9fe
 resource blobDataContributorRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
@@ -297,3 +343,16 @@ resource blobDataContributorRoleAssignment 'Microsoft.Authorization/roleAssignme
   }
 }
 
+// Assign the "Storage Blob Data Reader" role to the UAMI at the blobContainerAuto level.
+// Role ID for Storage Blob Data Reader: 2a2b9908-6ea1-4ae2-8e65-a410df84e7d1
+resource blobDataReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+  name: guid(uami.id,
+            blobContainerAuto.id,
+            '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1')
+  scope: blobContainerAuto
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1')
+    principalId: uami.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}

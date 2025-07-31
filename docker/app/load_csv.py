@@ -1,8 +1,10 @@
 # Load a CSV file into a table.
 # This is primarily intended to handle getting the column names and ordering right in a safe way.
+import base64
 import csv
 import logging
 import os
+import pandas as pd
 import re
 import requests
 import subprocess
@@ -95,6 +97,19 @@ def get_valid_locations(api_token):
         for name in names:
             writer.writerow([name])
 
+def get_places():
+    # The places file we need to get is in the automation container of the blob store.
+    logger.info("Fetching places from automation container")
+    xlsxfile = "places.xlsx"
+    xlsxpath = f"/tmp/{xlsxfile}"
+    csvpath = "/tmp/places.csv"
+    cmd = f"az storage blob download -f \"{xlsxpath}\" -c automation -n {xlsxfile} --account-name {STORAGEACCOUNTNAME} --auth-mode login"
+    result = subprocess.run(cmd, shell=True, check=True, text=True, stdout=subprocess.DEVNULL)
+
+    # Convert to CSV
+    logger.info("Converting %s to CSV", xlsxfile)
+    pd.read_excel(xlsxpath).to_csv(csvpath, index=False)
+
 def main():
     logger.info("Starting CSV download and upload process")
     api_token = os.environ["API_TOKEN"]  # Raises KeyError if not set
@@ -105,13 +120,20 @@ def main():
         csvfile = f"{file}.csv"
         tsvfile = f"/tmp/{file}.tsv"
 
-        if file == "valid_locations":
-            # Special case - download the CSV file that exists if any, then get the valid locations from SafetyCulture.
+        if file in ("valid_locations", "places"):
+            # Special case - download the CSV file that exists if any, then get the data from SafetyCulture.
             # If the same, just continue; if different, upload the new one so we have an archived copy.
             logger.info("Handling valid_locations file")
             saved_file = f"/tmp/{csvfile}.orig"
             download_csv(csvfile, path=saved_file)
-            get_valid_locations(api_token)
+            if file == "valid_locations":
+                # If the file is valid_locations, we need to get the data from SafetyCulture.
+                logger.info("Fetching valid locations from SafetyCulture")
+                get_valid_locations(api_token)
+            else:
+                logger.info("Fetching places from SharePoint")
+                get_places()
+
             def file_hash(filepath):
                 hasher = hashlib.sha256()
                 with open(filepath, "rb") as f:
@@ -123,10 +145,10 @@ def main():
                 orig_hash = file_hash(saved_file)
                 new_hash = file_hash(f"/tmp/{csvfile}")
                 if orig_hash == new_hash:
-                    logger.info("No changes in valid_locations.csv, skipping upload of CSV")
+                    logger.info("No changes in %s.csv, skipping upload of CSV", file)
                     pass
                 else:
-                    logger.info("valid_locations.csv has changed, proceeding with upload.")
+                    logger.info("%s.csv has changed, proceeding with upload.", file)
                     upload_csv(csvfile)
         else:
             # Just download the file
