@@ -58,8 +58,8 @@ SELECT
     MAX(CASE WHEN ii.item_id = '020249e7-f1b0-4283-b125-d18a7b2e3cdb' AND ii.type = 'list' THEN ii.response END) AS client_provisions,
     MAX(CASE WHEN ii.item_id = 'f3245d46-ea77-11e1-aff1-0800200c9a66' AND ii.type = 'textsingle' THEN ii.response END) AS form_id,
     MAX(CASE WHEN ii.item_id = '2ee02c31-bc20-45db-b421-1cbe707ed6a1'  AND ii.type = 'textsingle' THEN ISNULL(TRY_CAST(ii.response AS INT), 0) END) AS total_job_minutes
-    -- MAX(CASE WHEN ii.label = 'Who Cancelled?' THEN ii.response END) AS police_cancelled_who, -- xxx
-    -- MAX(CASE WHEN ii.label = 'Cancelled' THEN ii.response END) AS police_cancelled -- xxx
+    -- MAX(CASE WHEN ii.label = 'Who Cancelled?' THEN ii.response END) AS police_cancelled_who, -- This seems not to be present
+    -- MAX(CASE WHEN ii.label = 'Cancelled' THEN ii.response END) AS police_cancelled -- This seems not to be present
 FROM dbo.inspections i
 JOIN dbo.inspection_items ii
   ON i.audit_id2 = ii.audit_id

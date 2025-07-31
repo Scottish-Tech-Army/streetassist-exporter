@@ -17,7 +17,7 @@ CREATE TABLE dbo.WarningLocationsUsedNotInPlaces (
 );
 GO
 
-PRINT("Copy anomalous digital SUF data into tables");
+PRINT("Copy anomalous digital SUF job location data into tables");
 GO
 INSERT INTO dbo.WarningLocationsUsedNotInPlaces
 (
@@ -34,10 +34,34 @@ SELECT
     i.venue_name AS location,
     v.job_location_manual AS location_manual,
     i.form_id AS form_id,
-    'SUF' AS type
+    'SUFLocation' AS type
 FROM [dbo].[AllDigitalSUF] i
 LEFT JOIN inspectionview v ON i.auditID = v.audit_id
 LEFT JOIN places p ON i.venue_name = p.name
+WHERE p.name IS NULL AND i.servicedelivery_date >= '2024-01-01';
+GO
+
+PRINT("Copy anomalous digital SUF last venue data into tables");
+GO
+INSERT INTO dbo.WarningLocationsUsedNotInPlaces
+(
+    audit_id,
+    service_date,
+    location,
+    location_manual,
+    form_id,
+    type
+)
+SELECT
+    i.auditID AS audit_id,
+    i.servicedelivery_date AS service_date,
+    i.last_venue_visited AS location,
+    v.last_venue_visited_manual AS location_manual,
+    i.form_id AS form_id,
+    'SUFLastVenue' AS type
+FROM [dbo].[AllDigitalSUF] i
+LEFT JOIN inspectionview v ON i.auditID = v.audit_id
+LEFT JOIN places p ON i.last_venue_visited = p.name
 WHERE p.name IS NULL AND i.servicedelivery_date >= '2024-01-01';
 GO
 
