@@ -71,7 +71,8 @@ GO
 CREATE TABLE dbo.location_corrections (
         audit_id NVARCHAR(255),
         form_id NVARCHAR(255),
-        location NVARCHAR(255)
+        location NVARCHAR(255),
+        type NVARCHAR(255) NOT NULL
 );
 
 -- Create the historic WelfareChecks table, manually uploaded from earlier data

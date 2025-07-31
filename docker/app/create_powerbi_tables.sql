@@ -378,7 +378,18 @@ UPDATE A
   SET A.venue_name = S.location
 FROM   dbo.AllDigitalSUF AS A
   JOIN   location_corrections   AS S
-    ON   A.form_id = S.form_id;
+    ON   A.form_id = S.form_id
+  WHERE S.type = 'location';
+GO
+
+PRINT("Replace missing last_venue in AllDigitalSUF");
+GO
+UPDATE A
+  SET A.last_venue_visited = S.location
+FROM   dbo.AllDigitalSUF AS A
+  JOIN   location_corrections   AS S
+    ON   A.form_id = S.form_id
+  WHERE S.type = 'last_venue';
 GO
 
 PRINT("Replace missing locations in WelfareChecks");
