@@ -102,7 +102,47 @@ JOIN dbo.inspection_items ii
   ON i.audit_id2 = ii.audit_id
 WHERE
     i.template_id2 = 'template_b68037b3adca46d894a2e155032720f7' AND
-    (ii.type = "list" OR ii.type = "question" OR ii.type = "textsingle")
+    (ii.type = 'list' OR ii.type = 'question' OR ii.type = 'textsingle')
+GROUP BY
+    i.audit_id2,
+    i.template_id2,
+    i.template_name2,
+    i.conducted_on2,
+    i.service_date;
+GO
+
+-- Observation specific view
+CREATE OR ALTER VIEW dbo.observationview
+WITH SCHEMABINDING
+AS
+SELECT
+    i.audit_id2 as audit_id,
+    i.template_id2 as template_id,
+    i.template_name2 as template_name,
+    i.conducted_on2 as conducted_on,
+    i.service_date as service_date,
+    MAX(CASE WHEN ii.item_id = 'e17e7f41-2192-429d-a55a-0e50d42299eb' AND ii.type = 'list' THEN ii.response END) AS location_from_dropdown,
+    MAX(CASE WHEN ii.item_id = 'xxxtobeprovided' AND ii.type = 'textsingle' THEN ii.response END) AS location_manual,
+    CASE
+        WHEN
+            -- This tests if location_manual is not NULL, and location_from_dropdown starts with "Not On List"
+            ISNULL(NULLIF(MAX(CASE WHEN ii.item_id = 'xxxtobeprovidedlocation_manual' AND ii.type = 'textsingle' THEN ii.response END), ''), '') <> ''
+            AND LEFT(ISNULL(MAX(CASE WHEN ii.item_id = 'e17e7f41-2192-429d-a55a-0e50d42299eb' AND ii.type = 'list' THEN ii.response END), ''), 11) LIKE 'Not On List%'
+        THEN
+            -- Take the manually entered location, as there is one and the location from the list is "Not On List"
+            MAX(CASE WHEN ii.item_id = 'xxxtobeprovidedlocation_manual' AND ii.type = 'textsingle' THEN ii.response END)
+        ELSE
+            -- Perfectly normal location from list
+            MAX(CASE WHEN ii.item_id = 'e17e7f41-2192-429d-a55a-0e50d42299eb' AND ii.type = 'list' THEN ii.response END)
+    END AS location,
+    MAX(CASE WHEN ii.item_id = 'b39736ca-8957-4892-b23c-4981dac27d56' AND ii.type = 'list' THEN ii.response END) AS observation_type,
+    MAX(CASE WHEN ii.item_id = 'xxxtobeprovided' AND ii.type = 'textsingle' THEN ii.response END) AS form_id -- No form ID?
+FROM dbo.inspections i
+JOIN dbo.inspection_items ii
+  ON i.audit_id2 = ii.audit_id
+WHERE
+    i.template_id2 = 'template_7e7fee73389f436695b3b9e89b1a6a71' AND
+    (ii.type = 'list' OR ii.type = 'textsingle')
 GROUP BY
     i.audit_id2,
     i.template_id2,

@@ -89,6 +89,29 @@ LEFT JOIN places p ON i.location = p.name
 WHERE p.name IS NULL AND v.audit_id IS NOT NULL;
 GO
 
+PRINT("Copy anomalous Observation location data into tables");
+GO
+INSERT INTO dbo.WarningLocationsUsedNotInPlaces
+(
+    audit_id,
+    service_date,
+    location,
+    location_manual,
+    form_id,
+    type
+)
+SELECT
+    o.audit_id AS audit_id,
+    o.service_date AS service_date,
+    o.location_from_dropdown AS location,
+    o.location_manual AS location_manual,
+    o.form_id AS form_id,
+    'Observation' AS type
+FROM [dbo].[observationview] o
+LEFT JOIN places p ON o.location = p.name
+WHERE p.name IS NULL AND o.audit_id IS NOT NULL;
+GO
+
 -- Now create a table showing all locations that are in the valid_locations table not the places table
 PRINT("Create Valid Locations not in Places table - valid locations that are in valid_locations but not in the places table");
 GO
