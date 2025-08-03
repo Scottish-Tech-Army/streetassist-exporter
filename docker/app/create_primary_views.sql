@@ -136,7 +136,7 @@ SELECT
             MAX(CASE WHEN ii.item_id = 'e17e7f41-2192-429d-a55a-0e50d42299eb' AND ii.type = 'list' THEN ii.response END)
     END AS location,
     MAX(CASE WHEN ii.item_id = 'b39736ca-8957-4892-b23c-4981dac27d56' AND ii.type = 'list' THEN ii.response END) AS observation_type,
-    MAX(CASE WHEN ii.item_id = 'xxxtobeprovided' AND ii.type = 'textsingle' THEN ii.response END) AS form_id -- No form ID?
+    MAX(CASE WHEN ii.item_id = 'f3245d46-ea77-11e1-aff1-0800200c9a66' AND ii.type = 'textsingle' THEN ii.response END) AS form_id
 FROM dbo.inspections i
 JOIN dbo.inspection_items ii
   ON i.audit_id2 = ii.audit_id
