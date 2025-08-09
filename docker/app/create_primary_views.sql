@@ -47,7 +47,7 @@ SELECT
     MAX(CASE WHEN (ii.item_id = '6ee84dfe-7b59-4989-a9fe-486b50e82bc2' OR ii.item_id = 'b11a1d3b-cf78-4ef7-b08e-cf54a2e4b41c') AND ii.type = 'list' THEN ii.response END) AS job_location,
     MAX(CASE WHEN ii.item_id = 'c504089d-28d6-4b66-b336-3d0429b5c578' AND ii.type = 'textsingle' THEN ii.response END) AS job_location_manual,
     MAX(CASE WHEN (ii.item_id = '1cca3ab8-0195-421b-8066-27070717229b' OR ii.item_id = '5f973fe4-911b-48a7-b316-c9ff6e066d84') AND ii.type = 'list' THEN ii.response END) AS last_venue_visited,
-    MAX(CASE WHEN ii.item_id = 'xxxtobeprovided' AND ii.type = 'textsingle' THEN ii.response END) AS last_venue_visited_manual,
+    MAX(CASE WHEN ii.item_id = '210cbe75-e00d-4429-8e6a-09aa8cdf21c3' AND ii.type = 'textsingle' THEN ii.response END) AS last_venue_visited_manual,
     MAX(CASE WHEN (ii.item_id = '076c1f85-1c3e-4eba-8fa5-f46e850eb60e' OR ii.item_id = 'ca980823-c858-49de-90a2-b18933ef3383') AND ii.type = 'list' THEN ii.response END) AS nationality,
     MAX(CASE WHEN ii.item_id = '4d2dbd66-b3f4-4580-8a77-ebfbba9f05b8' AND ii.type = 'list' THEN ii.response END) AS ambulance_requested_who,
     MAX(CASE WHEN ii.item_id = '07b963a3-f99d-4e7d-a450-bd8ad6f2c7fe' AND ii.type = 'list' THEN ii.response END) AS ambulance_cancelled_who,
