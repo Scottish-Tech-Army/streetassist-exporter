@@ -5,40 +5,39 @@ param keyVaultName string
 @description('Globally unique name for the Container Registry')
 param containerRegistryName string
 
+@description('Name of the storage account')
+param storageAccountName string
+
 @description('SQL Server admin username')
-param sqlAdminUsername string = 'adminuser'
+var sqlAdminUsername string = 'adminuser'
 
 @description('SQL Server admin password')
 @secure()
 param sqlAdminPassword string = newGuid() // Random string
 
 @description('SQL Server name (automatically generated if not provided)')
-param sqlServerName string = 'sqlserver${uniqueString(resourceGroup().id)}'
+var sqlServerName string = 'sqlserver${uniqueString(resourceGroup().id)}'
 
 @description('Name of the Container Apps Environment (managed environment).')
-param containerAppEnvName string = 'exporterAppsEnv'
+var containerAppEnvName string = 'exporterAppsEnv'
 
 @description('Name of the Container Apps Job.')
-param containerAppJobName string = 'exporter'
+var containerAppJobName string = 'exporter'
 
 @description('Full image name including tag')
-param containerImage string = '${containerRegistryName}.azurecr.io/exporter:latest'
+var containerImage string = '${containerRegistryName}.azurecr.io/exporter:latest'
 
 @description('Registry URL')
-param registryUrl string = '${containerRegistryName}.azurecr.io'
+var registryUrl string = '${containerRegistryName}.azurecr.io'
 
 @description('Cron schedule for running the job - once per day at 6am')
-param scheduleCron string = '0 6 * * *'
-
-@description('Name of the storage account')
-param storageAccountName string
+var scheduleCron string = '0 6 * * *'
 
 @description('Blob storage container for csvdata')
-param blobContainerName string = 'csvdata'
+var blobContainerName string = 'csvdata'
 
 @description('Blob storage container for automation')
-param blobContainerAutoName string = 'automation'
-
+var blobContainerAutoName string = 'automation'
 // end
 
 // Azure Key Vault
@@ -93,13 +92,12 @@ resource sqlDatabase 'Microsoft.Sql/servers/databases@2021-02-01-preview' = {
   name: 'sqldb'
   location: resourceGroup().location
   properties: {
-    // The collation and maxSizeBytes are set to common defaults.
     collation: 'SQL_Latin1_General_CP1_CI_AS'
-    maxSizeBytes: 2147483648  // 2 GB max size (adjust if necessary)
+    maxSizeBytes: 5368709120  // 5 GB; we have 250GB free with the tier, but can increase later or use the rest for another DB
   }
   sku: {
-    name: 'Basic'
-    tier: 'Basic'
+    name: 'S0'
+    tier: 'Standard'
   }
 }
 
