@@ -122,15 +122,15 @@ SELECT
     i.conducted_on2 as conducted_on,
     i.service_date as service_date,
     MAX(CASE WHEN ii.item_id = 'e17e7f41-2192-429d-a55a-0e50d42299eb' AND ii.type = 'list' THEN ii.response END) AS location_from_dropdown,
-    MAX(CASE WHEN ii.item_id = 'xxxtobeprovided' AND ii.type = 'textsingle' THEN ii.response END) AS location_manual,
+    MAX(CASE WHEN ii.item_id = '645faa04-48c4-4250-bade-eebb3913e1a5' AND ii.type = 'textsingle' THEN ii.response END) AS location_manual,
     CASE
         WHEN
             -- This tests if location_manual is not NULL, and location_from_dropdown starts with "Not On List"
-            ISNULL(NULLIF(MAX(CASE WHEN ii.item_id = 'xxxtobeprovidedlocation_manual' AND ii.type = 'textsingle' THEN ii.response END), ''), '') <> ''
+            ISNULL(NULLIF(MAX(CASE WHEN ii.item_id = '645faa04-48c4-4250-bade-eebb3913e1a5' AND ii.type = 'textsingle' THEN ii.response END), ''), '') <> ''
             AND LEFT(ISNULL(MAX(CASE WHEN ii.item_id = 'e17e7f41-2192-429d-a55a-0e50d42299eb' AND ii.type = 'list' THEN ii.response END), ''), 11) LIKE 'Not On List%'
         THEN
             -- Take the manually entered location, as there is one and the location from the list is "Not On List"
-            MAX(CASE WHEN ii.item_id = 'xxxtobeprovidedlocation_manual' AND ii.type = 'textsingle' THEN ii.response END)
+            MAX(CASE WHEN ii.item_id = '645faa04-48c4-4250-bade-eebb3913e1a5' AND ii.type = 'textsingle' THEN ii.response END)
         ELSE
             -- Perfectly normal location from list
             MAX(CASE WHEN ii.item_id = 'e17e7f41-2192-429d-a55a-0e50d42299eb' AND ii.type = 'list' THEN ii.response END)
