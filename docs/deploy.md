@@ -70,9 +70,9 @@ Follow the following steps.
     bash scripts/deploy.sh
     ~~~
 
-### Setting the access token
+### Setting up the access token in key vault
 
-This process needs to be performed whenever your access token expires, and involves adding the field `accessToken` to the Azure key vault using the portal.
+The access token needs to be added to the field `accessToken` in the key vault.
 
 - Go to the [Azure portal](portal.azure.com).
 
@@ -135,6 +135,50 @@ Upload the various CSV files containing historical data.
     - `location_corrections.csv`
 
 Once the files are uploaded, you can continue.
+
+### Set up Power Automation to upload the places file
+
+The places file should live update itself, or we will all get very bored doing it manually every time it changes.
+
+You'll need a SAS token - you can get one like this:
+
+~~~bash
+az storage container generate-sas \
+  --account-name ${STORAGEACCOUNTNAME} \
+  --name automation \
+  --permissions w \
+  --expiry 2040-12-31T23:59:00Z \
+  --https-only \
+  --output tsv
+~~~
+
+To create the power automate flow, you can go to [Power Automate](https://make.powerautomate.com), and then create a flow.
+
+- Trigger: `Sharepoint: When a file is created or modified (properties only)`
+
+    - Set the site address to be the IT operations site from the dropdown
+
+    - Set the library name to `Data Warehouse` from the dropdown
+
+    - Find the `Places list` in the dropdown for the folder
+
+- Next action is `Sharepoint: Get File Content` that pulls the content of `places.xlsx`
+
+- Finally, action of `HTTP` (the plain HTTP one, not one of the variants)
+
+    - Set the URI to be `https://STORAGEACCOUNTNAME.blob.core.windows.net/automation/places.csv?SASTOKEN`, substituting storage site name and SAS token
+
+    - Method is `PUT`
+
+    - Headers:
+
+        - `x-ms-blob-type: BlockBlob`
+
+        - `Content-Type: application/octet-stream`
+
+    - Turn off chunking in the options
+
+    - Body is the file content from the previous action
 
 ## Setting up AAD permissions for SQL Server
 

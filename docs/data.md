@@ -104,6 +104,10 @@ The view `inspectionview` contains data about all inspections using the various 
 
 The view `welfarecheckview` contains data about all inspections using the "Welfare Check" template. It is created by joining the `inspections` and `inspection_items` fields, filtering on `template_id`, and then extracting appropriate fields to extract all relevant information about a welfare check.
 
+### Observation View
+
+The view `observationview` contains data about all inspections using the "Observations" template. It is created by joining the `inspections` and `inspection_items` fields, filtering on `template_id`, and then extracting appropriate fields to extract all relevant information about an observation. *Note that for this view, there is no corresponding secondary view or Power BI table; the data is suitable for display in this state so we just directly expose the view in Power BI. This may change if we need to do more complex analysis on the data.*
+
 ### Sign in Views
 
 The views `signinview` and `signincount` are used to track volunteer signins.

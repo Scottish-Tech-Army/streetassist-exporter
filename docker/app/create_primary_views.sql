@@ -47,7 +47,7 @@ SELECT
     MAX(CASE WHEN (ii.item_id = '6ee84dfe-7b59-4989-a9fe-486b50e82bc2' OR ii.item_id = 'b11a1d3b-cf78-4ef7-b08e-cf54a2e4b41c') AND ii.type = 'list' THEN ii.response END) AS job_location,
     MAX(CASE WHEN ii.item_id = 'c504089d-28d6-4b66-b336-3d0429b5c578' AND ii.type = 'textsingle' THEN ii.response END) AS job_location_manual,
     MAX(CASE WHEN (ii.item_id = '1cca3ab8-0195-421b-8066-27070717229b' OR ii.item_id = '5f973fe4-911b-48a7-b316-c9ff6e066d84') AND ii.type = 'list' THEN ii.response END) AS last_venue_visited,
-    MAX(CASE WHEN ii.item_id = 'xxxtobeprovided' AND ii.type = 'textsingle' THEN ii.response END) AS last_venue_visited_manual,
+    MAX(CASE WHEN ii.item_id = '210cbe75-e00d-4429-8e6a-09aa8cdf21c3' AND ii.type = 'textsingle' THEN ii.response END) AS last_venue_visited_manual,
     MAX(CASE WHEN (ii.item_id = '076c1f85-1c3e-4eba-8fa5-f46e850eb60e' OR ii.item_id = 'ca980823-c858-49de-90a2-b18933ef3383') AND ii.type = 'list' THEN ii.response END) AS nationality,
     MAX(CASE WHEN ii.item_id = '4d2dbd66-b3f4-4580-8a77-ebfbba9f05b8' AND ii.type = 'list' THEN ii.response END) AS ambulance_requested_who,
     MAX(CASE WHEN ii.item_id = '07b963a3-f99d-4e7d-a450-bd8ad6f2c7fe' AND ii.type = 'list' THEN ii.response END) AS ambulance_cancelled_who,
@@ -58,8 +58,8 @@ SELECT
     MAX(CASE WHEN ii.item_id = '020249e7-f1b0-4283-b125-d18a7b2e3cdb' AND ii.type = 'list' THEN ii.response END) AS client_provisions,
     MAX(CASE WHEN ii.item_id = 'f3245d46-ea77-11e1-aff1-0800200c9a66' AND ii.type = 'textsingle' THEN ii.response END) AS form_id,
     MAX(CASE WHEN ii.item_id = '2ee02c31-bc20-45db-b421-1cbe707ed6a1'  AND ii.type = 'textsingle' THEN ISNULL(TRY_CAST(ii.response AS INT), 0) END) AS total_job_minutes
-    -- MAX(CASE WHEN ii.label = 'Who Cancelled?' THEN ii.response END) AS police_cancelled_who, -- xxx
-    -- MAX(CASE WHEN ii.label = 'Cancelled' THEN ii.response END) AS police_cancelled -- xxx
+    -- MAX(CASE WHEN ii.label = 'Who Cancelled?' THEN ii.response END) AS police_cancelled_who, -- This seems not to be present
+    -- MAX(CASE WHEN ii.label = 'Cancelled' THEN ii.response END) AS police_cancelled -- This seems not to be present
 FROM dbo.inspections i
 JOIN dbo.inspection_items ii
   ON i.audit_id2 = ii.audit_id
@@ -102,7 +102,47 @@ JOIN dbo.inspection_items ii
   ON i.audit_id2 = ii.audit_id
 WHERE
     i.template_id2 = 'template_b68037b3adca46d894a2e155032720f7' AND
-    (ii.type = "list" OR ii.type = "question" OR ii.type = "textsingle")
+    (ii.type = 'list' OR ii.type = 'question' OR ii.type = 'textsingle')
+GROUP BY
+    i.audit_id2,
+    i.template_id2,
+    i.template_name2,
+    i.conducted_on2,
+    i.service_date;
+GO
+
+-- Observation specific view
+CREATE OR ALTER VIEW dbo.observationview
+WITH SCHEMABINDING
+AS
+SELECT
+    i.audit_id2 as audit_id,
+    i.template_id2 as template_id,
+    i.template_name2 as template_name,
+    i.conducted_on2 as conducted_on,
+    i.service_date as service_date,
+    MAX(CASE WHEN ii.item_id = 'e17e7f41-2192-429d-a55a-0e50d42299eb' AND ii.type = 'list' THEN ii.response END) AS location_from_dropdown,
+    MAX(CASE WHEN ii.item_id = '645faa04-48c4-4250-bade-eebb3913e1a5' AND ii.type = 'textsingle' THEN ii.response END) AS location_manual,
+    CASE
+        WHEN
+            -- This tests if location_manual is not NULL, and location_from_dropdown starts with "Not On List"
+            ISNULL(NULLIF(MAX(CASE WHEN ii.item_id = '645faa04-48c4-4250-bade-eebb3913e1a5' AND ii.type = 'textsingle' THEN ii.response END), ''), '') <> ''
+            AND LEFT(ISNULL(MAX(CASE WHEN ii.item_id = 'e17e7f41-2192-429d-a55a-0e50d42299eb' AND ii.type = 'list' THEN ii.response END), ''), 11) LIKE 'Not On List%'
+        THEN
+            -- Take the manually entered location, as there is one and the location from the list is "Not On List"
+            MAX(CASE WHEN ii.item_id = '645faa04-48c4-4250-bade-eebb3913e1a5' AND ii.type = 'textsingle' THEN ii.response END)
+        ELSE
+            -- Perfectly normal location from list
+            MAX(CASE WHEN ii.item_id = 'e17e7f41-2192-429d-a55a-0e50d42299eb' AND ii.type = 'list' THEN ii.response END)
+    END AS location,
+    MAX(CASE WHEN ii.item_id = 'b39736ca-8957-4892-b23c-4981dac27d56' AND ii.type = 'list' THEN ii.response END) AS observation_type,
+    MAX(CASE WHEN ii.item_id = 'f3245d46-ea77-11e1-aff1-0800200c9a66' AND ii.type = 'textsingle' THEN ii.response END) AS form_id
+FROM dbo.inspections i
+JOIN dbo.inspection_items ii
+  ON i.audit_id2 = ii.audit_id
+WHERE
+    i.template_id2 = 'template_7e7fee73389f436695b3b9e89b1a6a71' AND
+    (ii.type = 'list' OR ii.type = 'textsingle')
 GROUP BY
     i.audit_id2,
     i.template_id2,

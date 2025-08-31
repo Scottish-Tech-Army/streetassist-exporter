@@ -16,6 +16,7 @@ az deployment group create \
     --resource-group ${RG} --template-file templates/deploy.bicep \
     --parameters keyVaultName=${KEYVAULT} \
                  containerRegistryName=${REGISTRY} \
-                 storageAccountName=${STORAGEACCOUNTNAME}
+                 storageAccountName=${STORAGEACCOUNTNAME} \
+                 --debug --verbose
 
 echo "SUCCESS"

@@ -1,5 +1,5 @@
 # Use the official Python slim image.
-FROM python:3.12-slim
+FROM python:3.13-slim
 
 # Install dependencies for SQLCMD - msodbcsql and mssql-tools require curl, gnupg, and such.
 RUN apt-get update && apt-get install -y --no-install-recommends \

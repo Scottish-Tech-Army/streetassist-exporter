@@ -37,7 +37,7 @@ GO
 CREATE TABLE dbo.places (
         name NVARCHAR(255) NOT NULL UNIQUE,
         location_type NVARCHAR(255),
-        name_google NVARCHAR(255),
+        comments NVARCHAR(255),
         address NVARCHAR(255),
         latitude DECIMAL(12,8), -- latitude
         longitude DECIMAL(12,8) -- longitude
@@ -71,7 +71,8 @@ GO
 CREATE TABLE dbo.location_corrections (
         audit_id NVARCHAR(255),
         form_id NVARCHAR(255),
-        location NVARCHAR(255)
+        location NVARCHAR(255),
+        type NVARCHAR(255) NOT NULL
 );
 
 -- Create the historic WelfareChecks table, manually uploaded from earlier data
