@@ -181,24 +181,22 @@ def main():
                     raise ValueError(f"Header {header} not in columns")
 
             with open(tsvfile, "w", encoding="utf-8") as tsv:
-                writer = csv.writer(tsv, delimiter="\t", quoting=csv.QUOTE_NONE, lineterminator="\n")
-                # Write the column names as headers to the TSV file
-                writer.writerow(columns)
-                for row in reader:
-                    # Remove BOM and quotes from each cell in the row
+                tsv.write('\t'.join(columns) + '\n')
+                for row_num, row in enumerate(reader, start=2):
                     clean_row = []
                     for cell in row:
-                        # Remove BOM, and CRs and LFs
-                        cell = cell.replace('\ufeff', '').replace("\r", "").replace("\n", "")
-                        # Truncate decimals if matches pattern: optional -, 1-2 digits, ., >8 decimals
+                        cell = cell.replace('\ufeff', '').replace("\r", "").replace("\n", "").replace("\t", " ")
                         match = re.match(r'^-?\d{1,2}\.(\d{9,})$', cell)
                         if match:
                             int_part, dec_part = cell.split('.')
                             cell = f"{int_part}.{dec_part[:8]}"
                         clean_row.append(cell)
-                    # Reorder the row based on the column map, putting in None for missing columns
-                    reordered_row = [clean_row[column_map[col]] if col in column_map else None for col in columns]
-                    writer.writerow(reordered_row)
+                    reordered_row = [clean_row[column_map[col]] if col in column_map else '' for col in columns]
+                    try:
+                        tsv.write('\t'.join(reordered_row) + '\n')
+                    except Exception as e:
+                        logger.error("Failed writing row %d of %s: %s \u2014 row: %r", row_num, csvfile, e, row)
+                        raise
 
         load_tsv(file, tsvfile)
 

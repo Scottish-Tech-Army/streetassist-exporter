@@ -30,7 +30,24 @@ Before you can initially create a deployment, you need the following.
 
 - Power BI running on a Windows PC. Sorry - if you want to use Power BI, you need to use Windows.
 
-- An access key for Safety Culture. You can create this by logging into the [Safety Culture website](https://safetyculture.com).
+- An access key for Safety Culture. You can create this as follows.
+
+    - Log into [Safety Culture](https://safetyculture.com).
+
+    - Click on the cog wheel at bottom left, which brings up a menu.
+
+    - Click on `Integrations` on that menu.
+
+    - When the page appears, select `API tokens` at the top.
+
+    - Click the `Create API Token` button.
+
+    - Uncheck everything but the `View all data` checkbox (the token should not be able to change anything).
+
+    - Click the `Create token` button.
+
+    - Save off the token somewhere safe.
+
 
 ### Setting up resources in Azure
 
