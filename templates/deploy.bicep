@@ -101,6 +101,30 @@ resource sqlDatabase 'Microsoft.Sql/servers/databases@2021-02-01-preview' = {
   }
 }
 
+// Point-in-time restore: keep 35 days of backups (the maximum; the Azure default is 7).
+resource sqlShortTermRetention 'Microsoft.Sql/servers/databases/backupShortTermRetentionPolicies@2023-08-01' = {
+  parent: sqlDatabase
+  name: 'default'
+  properties: {
+    retentionDays: 35
+  }
+}
+
+// Long-term retention, so damage noticed late can still be undone: keep one weekly backup for 4 weeks,
+// and the first weekly backup of each month for 12 months. Yearly retention is omitted, which means none.
+// Deployed after the short-term policy: Azure SQL can reject concurrent operations on one database.
+resource sqlLongTermRetention 'Microsoft.Sql/servers/databases/backupLongTermRetentionPolicies@2023-08-01' = {
+  parent: sqlDatabase
+  name: 'default'
+  dependsOn: [
+    sqlShortTermRetention
+  ]
+  properties: {
+    weeklyRetention: 'P4W'
+    monthlyRetention: 'P12M'
+  }
+}
+
 // Container Registry (ACR)
 resource containerRegistry 'Microsoft.ContainerRegistry/registries@2021-06-01-preview' = {
   name: containerRegistryName
