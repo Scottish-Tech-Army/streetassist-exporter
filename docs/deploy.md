@@ -53,7 +53,7 @@ Before you can initially create a deployment, you need the following.
 
 Follow the following steps.
 
-- Set up a config file. *TODO: document with an example.*
+- Set up a config file. *TODO: document with an example.* `config/streetassist.sh` is the live deployment.
 
     Before running any of the bash commands, you should source this config file.
 
@@ -69,6 +69,8 @@ Follow the following steps.
     ~~~
 
     If necessary, you can log in using a different account, or use `az account set` to reset which subscription is in use.
+
+- Create the alert action group (see [Creating the alert action group](#creating-the-alert-action-group)).
 
 - Run the deploy script.
 
@@ -86,6 +88,24 @@ Follow the following steps.
     bash scripts/build.sh
     bash scripts/deploy.sh
     ~~~
+
+    The failure alert cannot work until the job has logged for the first time, because its log table does not exist until then. Once the access token and data files below are in place, run the job manually (see [Running manually](operations.md#running-manually)) and check that it succeeds.
+
+### Creating the alert action group
+
+Failure alerts (see [Failure alerts](operations.md#failure-alerts)) go to the recipients in an Azure *action group*. Create it by hand as follows.
+
+- The action group must be in the exporter resource group. The deploy script creates that group, but the action group comes first, so create the resource group now if it does not exist: `az group create --location ${REGION} --resource-group ${RG}`.
+
+- In the [Azure portal](https://portal.azure.com), select `Monitor`, then `Alerts`, then `Action groups`, and click `Create`.
+
+- Select the subscription and the exporter resource group. Enter the name from `ALERT_ACTION_GROUP` in your config file (normally `exporter-alerts`) and a short display name (normally `exporter`), and leave the region as `Global`.
+
+- On the `Notifications` tab, add a notification of type `Email/SMS message/Push/Voice`, and enter the first recipient's email address.
+
+- Click `Review + create`, then `Create`.
+
+- Optionally, open the action group and use `Test action group` to check that the email arrives.
 
 ### Setting up the access token in key vault
 

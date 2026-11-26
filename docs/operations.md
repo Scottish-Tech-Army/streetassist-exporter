@@ -23,6 +23,19 @@ Go to [the Azure portal](https://portal.azure.com).
 
 - To see how the run worked, select `Execution History` from within `Monitoring` on the left. That has links to the logs of the run.
 
+## Failure alerts
+
+The alert rule `exporter-run-failed` emails the recipients in the [alert action group](deploy.md#creating-the-alert-action-group) when a run fails. The alert fires in one of two cases:
+
+- The job logged `FAILED: exit code N`. This is checked every 15 minutes, so the email arrives within about 30 minutes of the failure.
+- The job has not logged `SUCCESS` for 26 hours, for example because it never started or timed out. This is a backstop, so the email can arrive up to 26 hours after the last success.
+
+One mail is sent when the alert fires, with subject "Alert 'Exporter run failed' was fired". Multiple consecutive failures only trigger a single mail unless the alert cleared in the meantime. When a later run succeeds the alert clears, usually within about 45 minutes of the success and at most about an hour, and a second email "Alert 'Exporter run failed' was resolved" is sent.
+
+To investigate further, check the alert's state under `Monitor`, then `Alerts`, in the portal. Any failed run can be investigated by opening `Execution History` as in [Running manually](#running-manually) and reading the logs of the failed run.
+
+To add or remove a recipient, open the action group under `Monitor`, then `Alerts`, then `Action groups`, and edit its email notifications.
+
 ## Viewing raw table data
 
 The raw table data can be viewed with any SQL viewer, but the easiest way to just look at it is through the [Azure Portal](https://portal.azure.com).

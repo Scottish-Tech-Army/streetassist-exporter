@@ -1,4 +1,16 @@
 #!/bin/bash
+# Log a FAILED marker whenever the script exits non-zero, for any reason: failures before the ERR trap
+# below is set, and failures it handles (its exit reaches this trap too), so the marker is the last
+# line on any exit the shell can catch (not SIGKILL). The failure alert searches the job logs for it; see docs/operations.md.
+log_failure_on_exit() {
+    local rc=$?
+    if [[ ${rc} -ne 0 ]]; then
+        echo "FAILED: exit code ${rc}"
+        sleep 2   # give the log line time to reach Log Analytics before the container exits
+    fi
+}
+trap log_failure_on_exit EXIT
+
 # Set up initial deployment.
 set -euo pipefail
 
@@ -12,8 +24,7 @@ error_handler() {
     local exit_code="$?"
     echo "Error occurred at line ${BASH_LINENO[0]}: command '${BASH_COMMAND}' exited with code ${exit_code}" >&2
 
-    # Wait a couple of seconds to give logs time to flush
-    sleep 2
+    # The EXIT trap logs the FAILED marker and waits for the logs to flush.
     exit "${exit_code}"
 }
 
@@ -187,4 +198,6 @@ SQLCMD="UPDATE dbo.CompletionTimestamp SET LastCompletion = '${COMPLETION}';"
 echo "    SQL command: \"${SQLCMD}\""
 sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -Q "${SQLCMD}"
 
+# The failure alert clears on this marker, so give it time to reach Log Analytics before the container exits.
 echo "SUCCESS"
+sleep 2
