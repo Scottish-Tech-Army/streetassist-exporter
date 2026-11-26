@@ -17,6 +17,7 @@ az deployment group create \
     --parameters keyVaultName=${KEYVAULT} \
                  containerRegistryName=${REGISTRY} \
                  storageAccountName=${STORAGEACCOUNTNAME} \
+                 alertActionGroupName=${ALERT_ACTION_GROUP} \
                  --debug --verbose
 
 echo "SUCCESS"

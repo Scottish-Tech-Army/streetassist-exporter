@@ -1,5 +1,6 @@
-# Use the official Python slim image.
-FROM python:3.13-slim
+# Use the official Python slim image, pinned to a Debian release (13, trixie) so that a new Debian
+# release cannot silently change the build.
+FROM python:3.13-slim-trixie
 
 # Install dependencies for SQLCMD - msodbcsql and mssql-tools require curl, gnupg, and such.
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -13,9 +14,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
-# Add the Microsoft repository keys and sources for mssql-tools.
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-  && curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list
+# Add the Microsoft repository for mssql-tools. Microsoft's packages-microsoft-prod package installs the
+# source list together with the signing key that list needs (the Debian 13 repository uses a newer key).
+RUN curl -fsSL -o /tmp/packages-microsoft-prod.deb https://packages.microsoft.com/config/debian/13/packages-microsoft-prod.deb \
+  && dpkg -i /tmp/packages-microsoft-prod.deb \
+  && rm /tmp/packages-microsoft-prod.deb
 
 # Update package lists again and install mssql-tools and msodbcsql17.
 RUN apt-get update && ACCEPT_EULA=Y apt-get install -y --no-install-recommends \

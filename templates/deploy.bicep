@@ -8,6 +8,9 @@ param containerRegistryName string
 @description('Name of the storage account')
 param storageAccountName string
 
+@description('Name of the existing action group (created by hand in the portal) that is notified when a run fails')
+param alertActionGroupName string
+
 @description('SQL Server admin username')
 var sqlAdminUsername string = 'adminuser'
 
@@ -159,6 +162,72 @@ resource containerAppEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
         // listKeys is used here to retrieve the shared key.
         sharedKey: logAnalyticsWorkspace.listKeys().primarySharedKey
       }
+    }
+  }
+}
+
+// Failure alert. The action group holds the email recipients; it is created by hand in the portal, in this
+// resource group (see docs/deploy.md), so that redeploying never overwrites recipients added there.
+resource alertActionGroup 'Microsoft.Insights/actionGroups@2023-01-01' existing = {
+  name: alertActionGroupName
+}
+
+// Fires when the newest job log marker is "FAILED: exit code N", or when no "SUCCESS" has been logged for
+// 26 hours (a run that never started or timed out). entry_point.sh prints both markers. The query builds
+// a single row with print, rather than summarising the markers, so that the no-markers case still
+// produces a row; the final where keeps it only when the alert should fire. autoMitigate resolves the
+// alert once a later run succeeds. The 26h is set by ago() in the query, not by windowSize: Azure accepts
+// only certain window sizes (26h is not one), so windowSize is the next one up, 48h.
+var failureAlertQuery string = '''
+let markers = ContainerAppConsoleLogs_CL
+    | where TimeGenerated > ago(26h)
+    | extend Line = trim(@"\s+", tostring(Log_s))
+    | where Line == "SUCCESS" or Line startswith "FAILED: exit code";
+let lastSuccess = toscalar(markers | where Line == "SUCCESS" | summarize max(TimeGenerated));
+let lastFailure = toscalar(markers | where Line startswith "FAILED: exit code" | summarize max(TimeGenerated));
+print LastSuccess = lastSuccess, LastFailure = lastFailure
+| where isnull(LastSuccess) or LastFailure > LastSuccess
+'''
+
+resource failureAlert 'Microsoft.Insights/scheduledQueryRules@2022-06-15' = {
+  name: 'exporter-run-failed'
+  location: resourceGroup().location
+  kind: 'LogAlert'
+  properties: {
+    displayName: 'Exporter run failed'
+    description: 'The nightly exporter job logged a failure, or has not succeeded for 26 hours.'
+    severity: 2
+    enabled: true
+    scopes: [
+      logAnalyticsWorkspace.id
+    ]
+    evaluationFrequency: 'PT15M'
+    windowSize: 'PT48H'
+    // Stateful: one notification when the alert fires, none until it resolves. Azure rejects
+    // muteActionsDuration alongside autoMitigate, so there is no separate mute period.
+    autoMitigate: true
+    // ContainerAppConsoleLogs_CL does not exist in a new workspace until the job first logs, and Azure
+    // rejects a rule whose query names a missing table, so a fresh deployment would fail without this.
+    // Until then the query cannot run, so the alert is not expected to fire, even for a job that never starts.
+    skipQueryValidation: true
+    criteria: {
+      allOf: [
+        {
+          query: failureAlertQuery
+          timeAggregation: 'Count'
+          operator: 'GreaterThan'
+          threshold: 0
+          failingPeriods: {
+            numberOfEvaluationPeriods: 1
+            minFailingPeriodsToAlert: 1
+          }
+        }
+      ]
+    }
+    actions: {
+      actionGroups: [
+        alertActionGroup.id
+      ]
     }
   }
 }
