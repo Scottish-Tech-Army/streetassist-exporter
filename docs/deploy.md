@@ -30,9 +30,9 @@ Before you can initially create a deployment, you need the following.
 
 - Power BI running on a Windows PC. Sorry - if you want to use Power BI, you need to use Windows.
 
-- An access key for Safety Culture. You can create this as follows.
+- An access key for Mitti. You can create this as follows.
 
-    - Log into [Safety Culture](https://safetyculture.com).
+    - Log into [Mitti](https://mitti.com).
 
     - Click on the cog wheel at bottom left, which brings up a menu.
 
@@ -53,12 +53,23 @@ Before you can initially create a deployment, you need the following.
 
 Follow the following steps.
 
-- Set up a config file. *TODO: document with an example.* `config/streetassist.sh` is the live deployment.
+- Set up or verify the config file in the `config/` directory, such as `config/streetassist.sh`, the live configuration and a working example. You should only create a new file if you are deploying a separate instance for testing. This config file is sourced and must export the following environment variables.
 
-    Before running any of the bash commands, you should source this config file.
+    | Variable name | Meaning |
+    |---|---|
+    | `RG` | Azure resource group name |
+    | `REGION` | Azure region to use |
+    | `KEYVAULT` | Name of the Azure Key Vault for secrets; must be globally unique |
+    | `REGISTRY` | Name of the Azure Container Registry for the image; must be globally unique |
+    | `STORAGEACCOUNTNAME` | Name of the Azure storage account; must be globally unique |
+    | `IMAGE_TAG` | Tag of the exporter image that the job runs |
+    | `ALERT_ACTION_GROUP` | Name of the manually created alert action group |
+    | `SUBSCRIPTION` | ID of the Azure subscription in use |
+
+    Before running any of the bash commands, you must source this config file.
 
     ~~~bash
-    . config/my_config_file.sh
+    . config/your_config_file.sh
     ~~~
 
 - Ensure that you have created an Azure subscription to use, and that you are logged into Azure, defaulting to that subscription.
@@ -78,11 +89,11 @@ Follow the following steps.
     bash scripts/deploy.sh
     ~~~
 
-    This will fail because the container apps job (rather tediously) refuses to create until the image is uploaded. Ignore this initial error.
+    This will fail the first time it is run on a clean install because the container apps job (rather tediously) refuses to create until the image is uploaded. Ignore this initial error.
 
     *TODO: we should do better here, but this is not blocking anything for now.*
 
-- Build and push the container image, then redeploy. This should succeed
+- Build and push the container image, then redeploy so the job is updated to use it. This should succeed.
 
     ~~~bash
     bash scripts/build.sh
@@ -111,7 +122,7 @@ Failure alerts (see [Failure alerts](operations.md#failure-alerts)) go to the re
 
 The access token needs to be added to the field `accessToken` in the key vault.
 
-- Go to the [Azure portal](portal.azure.com).
+- Go to the [Azure portal](https://portal.azure.com).
 
 - Find the key vault and click on it.
 
@@ -135,7 +146,7 @@ The access token needs to be added to the field `accessToken` in the key vault.
 
     - Enter `accessToken` as the name
 
-    - Enter your API token for Safety Culture as the `Secret value`
+    - Enter your API token for Mitti as the `Secret value`
 
     - Click the `Create` button
 

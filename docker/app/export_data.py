@@ -1,4 +1,4 @@
-# Load data from Safety Culture, terminating on error
+# Load data from Mitti, terminating on error
 # The only reason this is in python is that it lets us handle the config file
 # more easily.
 import subprocess
@@ -8,15 +8,15 @@ import sys
 import yaml
 
 DIR = "/app"
-COMMAND=f"{DIR}/safetyculture-exporter"
-CFG_FILE=f"{DIR}/safetyculture-exporter.yaml"
+COMMAND = f"{DIR}/mitti-exporter"
+CFG_FILE = f"{DIR}/mitti-exporter.yaml"
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s.%(msecs)03d - %(levelname)s - %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 
-def set_config(api_token, connection_string, last_run):
+def set_config(api_token, connection_string, last_run, inspection_items_exist):
     # Run the command
     logger.info("Set up configuration")
     os.chdir(DIR)
@@ -29,6 +29,8 @@ def set_config(api_token, connection_string, last_run):
 
     # Update specific fields in the configuration
     config['access_token'] = api_token
+    # The exporter still defaults to the pre-rebrand API domain; use the Mitti one.
+    config['api']['url'] = "https://api.mitti.com"
     config['export']['incremental'] = True
     config['export']['inspection']['archived'] = "both"
     config['export']['tables'] = ['inspections', 'inspection_items', 'templates', 'actions']
@@ -39,6 +41,10 @@ def set_config(api_token, connection_string, last_run):
     # Now the SQL configuration
     config['db']['connection_string'] = connection_string
     config['db']['dialect'] = "sqlserver"
+    # The exporter's schema migration fails on inspection_items (entry_point.sh indexes item_id), so disable
+    # it when that table exists, and run it only to create the tables on a fresh database.
+    # See "Upgrading the exporter" in docs/operations.md.
+    config['db']['auto_migrate_disabled'] = inspection_items_exist
 
     # Write the updated configuration back to the YAML file
     with open(CFG_FILE, 'w') as file:
@@ -54,6 +60,10 @@ def main():
     api_token = os.environ["API_TOKEN"]  # Raises KeyError if not set
     connection_string = os.environ["CONNECTION"]  # Raises KeyError if not set
     last_run_raw = os.environ["LASTRUN"]  # Raises KeyError if not set
+    inspection_items_exist_raw = os.environ["INSPECTION_ITEMS_EXIST"]  # Raises KeyError if not set
+    if inspection_items_exist_raw not in ("yes", "no"):
+        raise ValueError(f"Expected INSPECTION_ITEMS_EXIST to be 'yes' or 'no', got {inspection_items_exist_raw!r}")
+    inspection_items_exist = inspection_items_exist_raw == "yes"
     # LASTRUN is something like "2025-01-01 12:34:56" - which cannot be parsed by the exporter.
     # Convert to the correct format.
     logger.info("Last run time (raw): \"%s\"", last_run_raw)
@@ -66,7 +76,7 @@ def main():
     last_run = f"{date}T{time}Z"
     logger.info("Last run time (reformatted): \"%s\"", last_run)
 
-    set_config(api_token, connection_string, last_run)
+    set_config(api_token, connection_string, last_run, inspection_items_exist)
     export_data()
 
 if __name__ == "__main__":

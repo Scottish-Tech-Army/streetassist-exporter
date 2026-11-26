@@ -11,6 +11,9 @@ param storageAccountName string
 @description('Name of the existing action group (created by hand in the portal) that is notified when a run fails')
 param alertActionGroupName string
 
+@description('Tag of the exporter image the job runs; must already exist in the registry (pushed by scripts/build.sh)')
+param imageTag string
+
 @description('SQL Server admin username')
 var sqlAdminUsername string = 'adminuser'
 
@@ -27,8 +30,8 @@ var containerAppEnvName string = 'exporterAppsEnv'
 @description('Name of the Container Apps Job.')
 var containerAppJobName string = 'exporter'
 
-@description('Full image name including tag')
-var containerImage string = '${containerRegistryName}.azurecr.io/exporter:latest'
+@description('Full image name including tag; the repository name must match scripts/build.sh')
+var containerImage string = '${containerRegistryName}.azurecr.io/exporter:${imageTag}'
 
 @description('Registry URL')
 var registryUrl string = '${containerRegistryName}.azurecr.io'
@@ -178,6 +181,10 @@ resource alertActionGroup 'Microsoft.Insights/actionGroups@2023-01-01' existing 
 // produces a row; the final where keeps it only when the alert should fire. autoMitigate resolves the
 // alert once a later run succeeds. The 26h is set by ago() in the query, not by windowSize: Azure accepts
 // only certain window sizes (26h is not one), so windowSize is the next one up, 48h.
+// windowSize accepts only 5, 10, 15, 30, 45, 60, 120, 180, 240, 300, 360, 720, 1440 or 2880 minutes (as
+// ISO 8601 durations, e.g. PT48H); Azure rejects others at deploy time and `bicep build` does not catch it.
+// The query depends on the "FAILED: exit code N" and "SUCCESS" markers printed by docker/app/entry_point.sh;
+// if those change, change the query to match.
 var failureAlertQuery string = '''
 let markers = ContainerAppConsoleLogs_CL
     | where TimeGenerated > ago(26h)

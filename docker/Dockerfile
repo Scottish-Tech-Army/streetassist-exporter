@@ -16,6 +16,7 @@ RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
 # Add the Microsoft repository for mssql-tools. Microsoft's packages-microsoft-prod package installs the
 # source list together with the signing key that list needs (the Debian 13 repository uses a newer key).
+# Keep the Debian number in this URL in step with the base image above.
 RUN curl -fsSL -o /tmp/packages-microsoft-prod.deb https://packages.microsoft.com/config/debian/13/packages-microsoft-prod.deb \
   && dpkg -i /tmp/packages-microsoft-prod.deb \
   && rm /tmp/packages-microsoft-prod.deb

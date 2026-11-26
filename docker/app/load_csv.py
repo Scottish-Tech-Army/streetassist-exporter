@@ -68,10 +68,10 @@ def read_format(file):
     return columns
 
 def get_valid_locations(api_token):
-    # Valid locations are in the SafetyCulture data.
+    # Valid locations are in the Mitti data.
     logger.info("Extracting valid locations")
     RESPONSESET = "responseset_53d4a29d5525468a991eabe5aa71d2cd"
-    url = f"https://api.safetyculture.io/response_sets/{RESPONSESET}"
+    url = f"https://api.mitti.com/response_sets/{RESPONSESET}"
     headers = {
         "accept": "application/json",
         "authorization": f"Bearer {api_token}"
@@ -121,14 +121,14 @@ def main():
         tsvfile = f"/tmp/{file}.tsv"
 
         if file in ("valid_locations", "places"):
-            # Special case - download the CSV file that exists if any, then get the data from SafetyCulture.
+            # Special case - download the CSV file that exists if any, then get the data from Mitti.
             # If the same, just continue; if different, upload the new one so we have an archived copy.
             logger.info("Handling valid_locations file")
             saved_file = f"/tmp/{csvfile}.orig"
             download_csv(csvfile, path=saved_file)
             if file == "valid_locations":
-                # If the file is valid_locations, we need to get the data from SafetyCulture.
-                logger.info("Fetching valid locations from SafetyCulture")
+                # If the file is valid_locations, we need to get the data from Mitti.
+                logger.info("Fetching valid locations from Mitti")
                 get_valid_locations(api_token)
             else:
                 logger.info("Fetching places from SharePoint")
