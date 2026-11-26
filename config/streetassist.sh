@@ -5,6 +5,9 @@ export KEYVAULT=streetassistvault
 export REGISTRY=streetassistregistry
 export STORAGEACCOUNTNAME=streetassiststorage
 
+# The image tag the job runs (see docs/operations.md).
+export IMAGE_TAG=20261126-3
+
 # Alert configuration
 # Name of the action group that is manually created.
 export ALERT_ACTION_GROUP=exporter-alerts

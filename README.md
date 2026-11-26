@@ -1,6 +1,6 @@
 # Street Assist download tooling
 
-This project provides tooling to allow download of Safety Culture data and its display using Power BI dashboards, to allow Street Assist to view up to date data in their Power BI dashboards.
+This project provides tooling to allow download of Mitti (formerly SafetyCulture) data and its display using Power BI dashboards, to allow Street Assist to view up to date data in their Power BI dashboards.
 
 ## Directory structure
 
@@ -14,7 +14,7 @@ The contents of this repository are organised as follows.
 
 - [templates](templates) contains Azure templates (BICEP).
 
-- [docker](docker) contains the Azure Container App Job code, including scripts that are run during its nightly runs, the Safety Culture CLI exporter, and SQL table and view definitions.
+- [docker](docker) contains the Azure Container App Job code, including scripts that are run during its nightly runs, the Mitti exporter, and SQL table and view definitions.
 
 ## Documentation
 
@@ -22,7 +22,7 @@ The contents of this repository are organised as follows.
 
 - To deploy a new instance of the tooling, read the [deployment documentation](docs/deploy.md).
 
-- If you want to manually run the tooling, update the code, or view raw SQL data, there are instructions in the [operations documentation](docs/operations.md).
+- To run the job manually, release or roll back code, respond to a failure alert, restore the database, or view raw SQL data, read the [operations documentation](docs/operations.md).
 
 - For detailed information about database tables, read the [data design](docs/data.md).
 

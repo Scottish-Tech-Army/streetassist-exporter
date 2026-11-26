@@ -1,7 +1,7 @@
 #!/bin/bash
-# Log a FAILED marker whenever the script exits non-zero, for any reason: failures before the ERR trap
-# below is set, and failures it handles (its exit reaches this trap too), so the marker is the last
-# line on any exit the shell can catch (not SIGKILL). The failure alert searches the job logs for it; see docs/operations.md.
+# On any non-zero exit, log a FAILED marker as the last line; the failure alert searches the job logs for it
+# (see docs/operations.md). The trap is set first so that it also covers failures before the ERR trap below.
+# A run killed for exceeding its timeout may log no marker; the alert's 26-hour backstop covers that.
 log_failure_on_exit() {
     local rc=$?
     if [[ ${rc} -ne 0 ]]; then
@@ -56,6 +56,15 @@ export LASTRUN=$(sqlcmd -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -h 
 export THISRUN=$(date -u +"%Y-%m-%d %H:%M:%S")
 echo "    Last run time: ${LASTRUN}"
 echo "    This run time: ${THISRUN}"
+
+# export_data.py disables the exporter's schema migration when this table exists (see the comment there).
+# Assigned before it is exported, because "export VAR=$(...)" would hide a failed sqlcmd.
+echo "Checking whether dbo.inspection_items exists"
+INSPECTION_ITEMS_EXIST=$(sqlcmd -b -S ${SERVER} -d ${DB} -U ${ADMINUSER} -P ${ADMINPWD} -h -1 \
+    -Q "SET NOCOUNT ON; SELECT CASE WHEN OBJECT_ID(N'dbo.inspection_items', 'U') IS NULL THEN 'no' ELSE 'yes' END" \
+    | tr -d '[:space:]')
+export INSPECTION_ITEMS_EXIST
+echo "    dbo.inspection_items exists: ${INSPECTION_ITEMS_EXIST}"
 
 # Do the export
 echo "Run the export tool"

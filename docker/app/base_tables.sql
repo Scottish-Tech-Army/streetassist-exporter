@@ -44,7 +44,7 @@ CREATE TABLE dbo.places (
 );
 GO
 
--- Create the valid_locations table - i.e. what SafetyCulture allows for new inspections
+-- Create the valid_locations table - i.e. what Mitti allows for new inspections
 PRINT("Create the valid_locations table");
 GO
 DROP TABLE IF EXISTS dbo.valid_locations;

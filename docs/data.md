@@ -1,28 +1,28 @@
 # Data structure
 
-This document lays out the data structure of the various files and tables used by the repo. The basic flow is shown in the diagram below.
+This document lays out the data structure of the various files and tables used by the repo, for anyone changing the SQL or the Power BI tables, or investigating the data. The basic flow is shown in the diagram below.
 
 ![Data structure](data.svg)
 
 In broad terms, the data is structured and handled as follows.
 
-- Data is imported into some base tables, with a mix of live data imported from Safety Culture and Historic data imported from CSV.
+- Data is imported into some base tables, with a mix of live data imported from Mitti and Historic data imported from CSV.
 
-- The data from Safety Culture is not of the most useful format, with a single interaction in multiple rows in multiple tables, so some primary views are created that link inspections and inspection items.
+- The data from Mitti is not of the most useful format, with a single interaction in multiple rows in multiple tables, so some primary views are created that link inspections and inspection items.
 
 - Once these primary views are created, a secondary set of views are created which both parse the data further (breaking out composite fields, such as job outcome), and performing summary counts of all interactions over the same night.
 
 - Finally all of the views and the historic data are assembled into tables formatted for Power BI.
 
-All of this is idempotent; the job setting everything up will drop and recreate tables so that changes are applied immediately, and everything will recover if any or all tables are deleted. The one exception is that the Safety Culture exporter is passed a time of last successful run to speed up the slowest part of the process (though again, dropping all the tables will reset this).
+All of this is idempotent; the job setting everything up will drop and recreate tables so that changes are applied immediately, and everything will recover if any or all tables are deleted. There are two exceptions: the Mitti exporter's four tables, as described in [Upgrading the exporter](operations.md#upgrading-the-exporter); and that the Mitti exporter is passed a time of last successful run to speed up the slowest part of the process. In both cases, dropping all the tables will reset things.
 
 ## Base tables
 
 These are the first set of base import tables.
 
-### Safety Culture exported tables
+### Mitti exported tables
 
-The relevant tables and fields here are as as follows, showing the fields in the table, what they mean, and what this tooling uses them for (if anything). Full documentation is provided [on the Safety Culture website](https://developer.safetyculture.com/docs/understanding-the-data). Throughout, we include data with the `archived` field set.
+The relevant tables and fields here are as as follows, showing the fields in the table, what they mean, and what this tooling uses them for (if anything). Full documentation is provided [on the Mitti developer site](https://developer.mitti.com/docs/understanding-the-data). Throughout, we include data with the `archived` field set.
 
 ### Templates
 
@@ -78,13 +78,13 @@ Interesting fields include the following
 | label                    | Identifier (such as question wording)  |          |
 | response                 | Response given | Data for output         |
 
-### Updates to Safety Culture based tables
+### Updates to Mitti-based tables
 
-After the Safety Culture data is exported, the table data is modified, with the addition of various indices, and the removal of PII.
+After the Mitti data is exported, the table data is modified, with the addition of various indices, and the removal of PII.
 
 ### Historic data
 
-Various sets of historic data (from before Safety Culture) are loaded from csv files into tables.
+Various sets of historic data (from before Street Assist adopted the platform) are loaded from csv files into tables.
 
 - The table `historic_all_suf` contains historic data about all users of the SUF forms.
 
@@ -94,7 +94,7 @@ Various sets of historic data (from before Safety Culture) are loaded from csv f
 
 ## Primary views
 
-Once we have the data from Safety Culture, we need to turn the Safety Culture into something more useful by combining the inspection items and inspections tables, and interpreting the `item_id` fields to turn some UUID into a meaningful column name.
+Once we have the data from Mitti, we need to turn the Mitti data into something more useful by combining the inspection items and inspections tables, and interpreting the `item_id` fields to turn some UUID into a meaningful column name.
 
 ### Inspection View
 
@@ -128,7 +128,7 @@ These views are as follows.
 
 ## Creating Power BI tables
 
-The Power BI report uses a range of tables. These tables are constructed largely by combining historic CSV data with data extracted from Safety Culture.
+The Power BI report uses a range of tables. These tables are constructed largely by combining historic CSV data with data extracted from Mitti.
 
 - The table `places` is just a set of known places uploaded from CSV.
 
@@ -144,5 +144,5 @@ The Power BI report uses a range of tables. These tables are constructed largely
 
 The table `dbo.JobTimestamp` contains a single timestamp, containing the last time an export was run successfully. It is read before each run, and updated afterwards on success.
 
-This is because the Safety Culture exporter needs to be passed it in order to only download changes since the last time. If this table is dropped, then a full resync will be done.
+This is because the Mitti exporter needs to be passed it in order to only download changes since the last time. If this table is dropped, then a full resync will be done.
 

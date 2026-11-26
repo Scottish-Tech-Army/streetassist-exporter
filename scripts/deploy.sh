@@ -1,5 +1,5 @@
 #!/bin/bash
-# Set up initial deployment.
+# Deploy (or redeploy) the resources, running image exporter:${IMAGE_TAG}.
 set -euo pipefail
 echo "RG: ${RG}"
 
@@ -18,6 +18,7 @@ az deployment group create \
                  containerRegistryName=${REGISTRY} \
                  storageAccountName=${STORAGEACCOUNTNAME} \
                  alertActionGroupName=${ALERT_ACTION_GROUP} \
+                 imageTag=${IMAGE_TAG} \
                  --debug --verbose
 
 echo "SUCCESS"
